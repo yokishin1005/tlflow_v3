@@ -1,4 +1,10 @@
-/.venv
+# Global ignores
+.venv
 .env
-/.next
-/node_modules
+
+# Ignore Next.js build and dependencies
+/frontend/.next
+/frontend/node_modules
+
+# Ignore backend dependencies
+/backend/node_modules
