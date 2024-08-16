@@ -1,10 +1,13 @@
-# Global ignores
-.venv
+# Virtual environment
+.venv/
 .env
 
-# Ignore Next.js build and dependencies
-/frontend/.next
-/frontend/node_modules
+# Node.js dependencies
+node_modules/
 
-# Ignore backend dependencies
-/backend/node_modules
+# Next.js build output
+.next/
+
+# Python cache
+__pycache__/
+
