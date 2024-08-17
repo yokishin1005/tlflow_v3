@@ -2,11 +2,11 @@
 .venv/
 .env
 
-# Node.js dependencies
+*.log
 node_modules/
+.next/
 
 # Next.js build output
-.next/
 
 # Python cache
 __pycache__/
