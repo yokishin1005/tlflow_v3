@@ -27,14 +27,6 @@ def get_embedding(text, model= EMBEDDING_MODEL):
     text = text.replace("\n", " ")
     return client.embeddings.create(input=[text], model=model).data[0].embedding
 
-def vectorize_employee(employee_data):
-    combined_text = f"{employee_data['employee_info']['name']} {employee_data['employee_info']['academic_background']} {employee_data['employee_info']['recruitment_type']} {' '.join([skill['skill_name'] for skill in employee_data['skills']])}"
-    return get_embedding(combined_text)
-
-def vectorize_job_post(job_post):
-    combined_text = f"{job_post.job_title} {job_post.job_detail}"
-    return get_embedding(combined_text)
-
 def get_employee_vector(db: Session, employee_id: int) -> List[float]:
     """
     従業員のベクトルを取得する
@@ -91,65 +83,6 @@ def get_job_details(db: Session, job_ids: List[int]) -> List[Dict[str, Any]]:
     """
     jobs = db.query(JobPost).filter(JobPost.job_post_id.in_(job_ids)).all()
     return [{"job_post_id": job.job_post_id, "job_title": job.job_title, "job_detail": job.job_detail} for job in jobs]
-
-def get_embedding(text: str, model: str = EMBEDDING_MODEL) -> List[float]:
-    """
-    OpenAI APIを使用してテキストのembeddingを取得する
-    
-    :param text: 入力テキスト
-    :param model: 使用する埋め込みモデル
-    :return: 埋め込みベクトル
-    """
-    try:
-        response = openai.embeddings.create(input=[text], model=model)
-        return response.data[0].embedding
-    except Exception as e:
-        print(f"Error in get_embedding: {e}")
-        return []
-
-def create_text_for_vectorization(data: Dict[str, Any], keys: List[str]) -> str:
-    """
-    与えられたデータと鍵からベクトル化用のテキストを生成する
-    
-    :param data: 入力データ
-    :param keys: 使用するキーのリスト
-    :return: 生成されたテキスト
-    """
-    return " ".join(str(data.get(key, "")) for key in keys)
-
-def vectorize_data(data: Dict[str, Any], keys: List[str]) -> List[float]:
-    """
-    データをベクトル化する
-    
-    :param data: 入力データ
-    :param keys: 使用するキーのリスト
-    :return: ベクトル化されたデータ
-    """
-    text = create_text_for_vectorization(data, keys)
-    return get_embedding(text)
-
-def get_or_create_vector(db: Session, model, id_field: str, id_value: int, data: Dict[str, Any], keys: List[str]) -> List[float]:
-    """
-    ベクトルを取得または作成する
-    
-    :param db: データベースセッション
-    :param model: 使用するモデル
-    :param id_field: IDフィールド名
-    :param id_value: ID値
-    :param data: 入力データ
-    :param keys: 使用するキーのリスト
-    :return: ベクトル
-    """
-    existing_vector = db.query(model).filter(getattr(model, id_field) == id_value).first()
-    if existing_vector:
-        return json.loads(existing_vector.vector)
-    
-    vector = vectorize_data(data, keys)
-    vector_json = json.dumps(vector)
-    new_vector = model(**{id_field: id_value, "vector": vector_json})
-    db.add(new_vector)
-    db.commit()
-    return vector
 
 
 def prepare_recommendation_data(employee_data: Dict[str, Any], top_jobs: List[Dict[str, Any]], employee_vector: List[float]) -> Dict[str, Any]:
