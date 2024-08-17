@@ -3,18 +3,14 @@
 /.pnp
 .pnp.js
 
-# Node modules
-**/node_modules
 
-# Next.js specific files
-**/.next
-**/out
+
 
 # Build outputs
-**/build
+/build
 
 # Environment variables
-**/.env*
+/.env*
 
 # Misc
 .DS_Store
