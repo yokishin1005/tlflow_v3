@@ -31,11 +31,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/job_recommendation.js"
-    ],
-    "/mypage": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/mypage.js"
     ]
   },
   "ampFirstPages": []

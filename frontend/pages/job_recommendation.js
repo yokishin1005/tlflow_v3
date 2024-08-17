@@ -77,7 +77,7 @@ export default function JobRecommendation() {
         const fetchUserData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:8000/users/me', {
+                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -88,7 +88,7 @@ export default function JobRecommendation() {
                 setError('ユーザー情報の取得に失敗しました。');
             }
         };
-
+    
         fetchUserData();
     }, []);
 
@@ -97,7 +97,7 @@ export default function JobRecommendation() {
         setError('');
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:8000/recommendations', null, {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/recommendations`, null, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

@@ -16,4 +16,8 @@ https://platform.openai.com/api-keys
 
 ・npm install framer-motion
 
+・ルートディレクトリーに.envファイルを作成→NEXT_PUBLIC_API_URL=http://localhost:8000と入力
+
 ・npm run dev
+
+

@@ -14,7 +14,7 @@ export default function MyPage() {
             try {
                 setLoading(true);
                 const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:8000/users/me', {
+                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -27,7 +27,7 @@ export default function MyPage() {
                 setLoading(false);
             }
         };
-
+    
         fetchData();
     }, []);
 

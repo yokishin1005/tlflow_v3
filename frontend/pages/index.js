@@ -30,7 +30,7 @@ export default function Login() {
             params.append('username', username);
             params.append('password', password);
 
-            const response = await axios.post('http://localhost:8000/token', params, {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/token`, params, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
