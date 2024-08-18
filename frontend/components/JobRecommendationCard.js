@@ -62,7 +62,7 @@ export default function JobRecommendationCard({
                 onClick={handleJobRecommendation}
                 disabled={loading}
             >
-                {loading ? 'AIが探しています...' : 'もう一度提案してもらう'}
+                {loading ? 'AIが探しています...' : '提案してもらう'}
             </motion.button>
         </motion.div>
     );

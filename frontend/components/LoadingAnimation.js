@@ -19,7 +19,7 @@ export default function LoadingAnimation() {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
             >
-                AIがあなたに最適な求人を探しています...
+                最適な求人を探しています...
             </motion.p>
         </motion.div>
     );
