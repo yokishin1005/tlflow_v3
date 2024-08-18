@@ -7,7 +7,8 @@
 
 ・uvicorn app.main:app --reload
 
-※envファイルを設定→OpenAI API KEYを格納
+※ModuleNotFoundError: No module named 'app'というエラーが出たら、もう一度やれば直ります
+※envファイルを設定→OPENAI_API_KEY=`your_api_key`を格納
 
 https://platform.openai.com/api-keys
 

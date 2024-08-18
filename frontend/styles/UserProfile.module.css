@@ -10,8 +10,8 @@
 }
 
 .profileImage {
-    width: 120px;
-    height: 120px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     object-fit: cover;
     margin-bottom: 20px;
@@ -26,7 +26,7 @@
 }
 
 .profileInfo li {
-    margin-bottom: 10px;
-    font-size: 14px;
+    margin-top: 20px;
+    font-size: 20px;
     color: black;
 }

@@ -18,7 +18,7 @@ export default function PsychographicChart({ spiData }) {
             className={styles.section}
         >
             <h2>性格特性</h2>
-            <RadarChart data={radarData} labels={['創造力', 'リーダーシップ', '分析力', '協調性', '実行力']} />
+            <RadarChart data={radarData} labels={['外向性', '協調性', '誠実性', '繊細性', '開放性']} />
         </motion.div>
     );
 }
@@ -27,7 +27,7 @@ function RadarChart({ data, labels }) {
     const chartSize = 300;
     const centerX = chartSize / 2;
     const centerY = chartSize / 2;
-    const maxValue = Math.max(...data, 100);  // 最大値を100とする
+    const maxValue = Math.max(...data, 70);  // 最大値を100とする
     const angleStep = (Math.PI * 2) / labels.length;
 
     // データポイントの座標を計算

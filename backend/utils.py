@@ -106,29 +106,46 @@ def prepare_recommendation_data(employee_data: Dict[str, Any], top_jobs: List[Di
 def generate_recommendations(prepared_data: Dict[str, Any]) -> str:
     prompt = f"""Analyze the provided employee vector and job information to suggest the 3 most suitable job matches. For each match, provide specific and detailed reasons focusing on the employee's strengths and how they align with the job requirements.
 
-    Employee Vector: {json.dumps(prepared_data['employee_vector'])}
-    Job Information: {json.dumps(prepared_data['top_jobs'])}
+Employee Vector: {json.dumps(prepared_data['employee_vector'])}
+Job Information: {json.dumps(prepared_data['top_jobs'])}
 
-    Consider both skills and personality traits in your analysis. When discussing personality, focus on strengths and how they contribute to job success. Use concrete examples and scenarios to illustrate how the employee's qualities would be valuable in each role.
+Consider both skills and personality traits in your analysis. When discussing personality, use the Big Five model as a framework to interpret the employee's traits:
 
-    Provide your answer in Japanese, using natural, professional language appropriate for a business setting. Your response should paint a vivid picture of how the employee would excel in each role. Use the following format as a guide, but express the information in a conversational, engaging manner:
+- 開放性 (Openness) → 好奇心旺盛
+- 誠実性 (Conscientiousness) → 責任感が強い
+- 外向性 (Extraversion) → 社交的
+- 協調性 (Agreeableness) → 思いやりがある
+- 神経症傾向 (Neuroticism) → 感受性が豊か
 
-    1. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
-       マッチング理由：
-       ・[具体的なスキルや経験を挙げ、それらがどのように職務で活かされるか、具体的な業務シーンを想像して説明]
-       ・[性格や行動特性の強みを挙げ、それらが職場環境や職務遂行にどのように貢献するか、具体的な例を用いて説明]
+Additionally, note that the SPI data is set with values ranging from 30-70:
+- 30-40: 低い
+- 40-50: 中程度
+- 50-60: 高い
+- 60-70: 抜群に高い
 
-    2. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
-       マッチング理由：
-       ・[スキル面での具体的な説明]
-       ・[性格面での具体的な説明]
+Explain how these traits contribute to job success. Use concrete examples and scenarios to illustrate how the employee's qualities would be valuable in each role. Ensure the analysis is organized and articulated in a professional, business-oriented manner, making it easy for any reader to understand the alignment.
 
-    3. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
-       マッチング理由：
-       ・[スキル面での具体的な説明]
-       ・[性格面での具体的な説明]
+Avoid using specific vector numbers in your explanation. Focus on creating personalized, easily understandable suggestions that are concrete and make the reader feel, "This is a unique, 1-to-1 proposal tailored to this employee."
 
-    各推奨求人について、この方の活躍が即座にイメージできるような具体的な推論を用いて説明してください。その方の強みやスキルがどのように職務に貢献するか、どのような場面で特に力を発揮するかなど、具体的なシナリオを交えて説明することで、読み手がその人物の適性を明確にイメージできるようにしてください。"""
+Provide your answer in Japanese, using natural, professional language appropriate for a business setting. Your response should paint a vivid picture of how the employee would excel in each role. Use the following format as a guide, but express the information in a conversational, engaging manner:
+
+1. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
+   マッチング理由：
+   ・[具体的なスキルや経験を挙げ、それらがどのように職務で活かされるか、具体的な業務シーンを想像して説明]
+   ・[性格や行動特性の強みを挙げ、Big Fiveに基づき、それらが職場環境や職務遂行にどのように貢献するか、具体的な例を用いて説明]
+
+2. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
+   マッチング理由：
+   ・[スキル面での具体的な説明]
+   ・[Big Fiveに基づく性格面での具体的な説明]
+
+3. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
+   マッチング理由：
+   ・[スキル面での具体的な説明]
+   ・[Big Fiveに基づく性格面での具体的な説明]
+
+各推奨求人について、この方の活躍が即座にイメージできるような具体的な推論を用いて説明してください。その方の強みやスキルがどのように職務に貢献するか、どのような場面で特に力を発揮するかなど、具体的なシナリオを交えて説明することで、読み手がその人物の適性を明確にイメージできるようにしてください。"""
+
 
     try:
         completion = client.chat.completions.create(

@@ -22,7 +22,7 @@ export default function JobRecommendationCard({
             transition={{ delay: 0.4 }}
             className={styles.card}
         >
-            <h3>求人推薦結果</h3>
+            <h3>AI求人提案</h3>
             <AnimatePresence>
                 {loading ? (
                     <LoadingAnimation key="loading" />
@@ -62,7 +62,7 @@ export default function JobRecommendationCard({
                 onClick={handleJobRecommendation}
                 disabled={loading}
             >
-                {loading ? 'AIが探しています...' : 'AIに探してもらう'}
+                {loading ? 'AIが探しています...' : 'もう一度提案してもらう'}
             </motion.button>
         </motion.div>
     );

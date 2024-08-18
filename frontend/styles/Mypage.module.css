@@ -18,8 +18,8 @@
     padding: 20px;
     overflow-y: auto;
     color: black;
-    display: flex;
     flex-direction: column;
+    min-height: 70vh;  /* コンテンツエリアの最小高さを設定 */
 }
 
 .sectionContainer {
@@ -52,4 +52,28 @@
 .error {
     color: red;
     font-weight: bold;
+}
+
+.contentArea {
+    flex-grow: 1;  /* 利用可能なスペースを埋める */
+}
+
+.buttonContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.button {
+    padding: 10px 20px;
+    background-color: #FFA500;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.button:hover {
+    background-color: #ff8c00;
 }

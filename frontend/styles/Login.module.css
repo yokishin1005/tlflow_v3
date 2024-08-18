@@ -10,6 +10,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    color: black;
 }
 
 .loginRight {
@@ -60,4 +61,26 @@
     color: red;
     margin-top: 10px;
     text-align: center;
+}
+
+/* 新しく追加されたスタイル */
+.loginBrand {
+    text-align: center;
+}
+
+.logo {
+    width: 500px;
+    margin-bottom: 10px;
+}
+
+.loginBrand h1 {
+    font-size: 24px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.loginBrand h2 {
+    font-size: 32px;
+    color: #333;
+    margin-top: 10px;
 }
