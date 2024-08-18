@@ -1,0 +1,68 @@
+.jobItem {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.jobHeader {
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    padding: 15px;
+}
+
+.jobRank {
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFA500;
+    margin-right: 15px;
+    min-width: 30px;
+}
+
+.jobInfo {
+    flex-grow: 1;
+}
+
+.jobTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin: 0 0 5px 0;
+}
+
+.jobId {
+    font-size: 14px;
+    color: #666;
+}
+
+.jobSimilarity {
+    font-size: 16px;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.jobReasons {
+    padding: 15px;
+}
+
+.jobReasons h5 {
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.jobReasons ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.jobReasons li {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.jobReasons li strong {
+    color: #333;
+}

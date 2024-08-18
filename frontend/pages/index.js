@@ -1,202 +1,50 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import useAuth from '../hooks/useAuth';
+import Layout from '../components/Layout';
+import styles from '../styles/Home.module.css';
 
-export default function Login() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
-    const router = useRouter();
+export default function Home() {
+  const router = useRouter();
+  const { user } = useAuth();
 
-    useEffect(() => {
-        if (isSuccess) {
-            const timer = setTimeout(() => {
-                router.push('/mypage');
-            }, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [isSuccess, router]);
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setIsLoading(true);
+  if (!user) {
+    return null; // または loading spinner
+  }
 
-        try {
-            const params = new URLSearchParams();
-            params.append('username', username);
-            params.append('password', password);
+  return (
+    <Layout>
+      <div className={styles.container}>
+        <main className={styles.main}>
+          <h1 className={styles.title}>
+            Welcome to <a href="https://nextjs.org">Talent Flow</a>
+          </h1>
 
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/token`, params, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                withCredentials: true
-            });
+          <p className={styles.description}>
+            AIによる最適な人事配置を実現
+          </p>
 
-            localStorage.setItem('token', response.data.access_token);
-            setIsSuccess(true);
+          <div className={styles.grid}>
+            <a href="/job_recommendation" className={styles.card}>
+              <h2>Job Recommendations &rarr;</h2>
+              <p>Find the best job matches based on your skills and experience.</p>
+            </a>
 
-        } catch (error) {
-            console.error('ログインに失敗しました:', error);
-            if (error.response) {
-                setError(`ログインに失敗しました。ユーザー名とパスワードを確認してください。`);
-            } else if (error.request) {
-                setError('サーバーに接続できません。ネットワーク接続を確認してください。');
-            } else {
-                setError('予期せぬエラーが発生しました。もう一度お試しください。');
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
+            <a href="/mypage" className={styles.card}>
+              <h2>My Page &rarr;</h2>
+              <p>View and update your profile information.</p>
+            </a>
 
-    return (
-        <div className="login-container">
-            <div className="login-left">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="login-brand"
-                >
-                    <img src="/images/TF_logo.png" alt="Talent Flow Logo" className="logo" style={{ width: '500px', marginBottom: '10px' }}/>
-                    <h1>AIによる最適な人事配置を実現</h1>
-                    <h2>Talent Flow</h2>
-                </motion.div>
-            </div>
-            <div className="login-right">
-                <motion.form
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    onSubmit={handleSubmit}
-                >
-                    <div className="input-group">
-                        <motion.input 
-                            whileFocus={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                            type="text" 
-                            value={username} 
-                            onChange={(e) => setUsername(e.target.value)} 
-                            placeholder="User Name" 
-                            required
-                        />
-                    </div>
-                    <div className="input-group">
-                        <motion.input 
-                            whileFocus={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                            type="password" 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            placeholder="Password" 
-                            required
-                        />
-                    </div>
-                    <div className="input-group">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            type="submit"
-                            disabled={isLoading || isSuccess}
-                        >
-                            {isLoading ? 'ログイン中...' : isSuccess ? 'ログイン成功!' : 'log in'}
-                        </motion.button>
-                    </div>
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="error-message"
-                            >
-                                {error}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.form>
-            </div>
-
-            <style jsx global>{`
-                .login-container {
-                    display: flex;
-                    height: 100vh;
-                    width: 100vw;
-                }
-                .login-left {
-                    flex: 1;
-                    background-color: #f0f0f0;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    flex-direction: column;
-                    text-align: center;
-                }
-                .login-right {
-                    flex: 1;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    background-color: #fff;
-                }
-                .login-brand {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-                .logo {
-                    width: 150px;
-                    margin-bottom: 20px;
-                }
-                h1 {
-                    font-size: 24px;
-                    color: #666;
-                }
-                h2 {
-                    font-size: 32px;
-                    color: #333;
-                    margin-top: 10px;
-                }
-                form {
-                    width: 300px;
-                }
-                .input-group {
-                    margin-bottom: 20px;
-                }
-                input {
-                    width: 100%;
-                    padding: 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                    font-size: 16px;
-                }
-                button {
-                    width: 100%;
-                    padding: 10px;
-                    background-color: #f0ad4e;
-                    border: none;
-                    border-radius: 5px;
-                    color: white;
-                    font-size: 16px;
-                    cursor: pointer;
-                }
-                button:hover {
-                    background-color: #ec971f;
-                }
-                button:disabled {
-                    background-color: #cccccc;
-                    cursor: not-allowed;
-                }
-                .error-message {
-                    color: red;
-                    margin-top: 10px;
-                    text-align: center;
-                }
-            `}</style>
-        </div>
-    );
+            {/* Add more cards for other features */}
+          </div>
+        </main>
+      </div>
+    </Layout>
+  );
 }
