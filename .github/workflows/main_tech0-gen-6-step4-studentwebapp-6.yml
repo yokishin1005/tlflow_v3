@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'  # または、プロジェクトで使用しているNode.jsのバージョン
+          node-version: '18'  # Node.js 18.x LTSを使用
 
       - name: Install frontend dependencies
         run: |
