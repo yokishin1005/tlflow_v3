@@ -42,7 +42,7 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 100px;
 }
 
 .buttons button:hover {
@@ -65,13 +65,13 @@
 }
 
 .button {
-    padding: 10px 20px;
+    padding: 5px 20px;
     background-color: #FFA500;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 .button:hover {
