@@ -1,4 +1,8 @@
-name: Build and deploy Next.js frontend to Azure Web App - tech0-gen-6-step4-studentwebapp-6
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
+
+name: Build and deploy Python app to Azure Web App - tech0-gen-6-step4-studentwebapp-6
 
 on:
   push:
@@ -13,33 +17,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Python version
+        uses: actions/setup-python@v5
         with:
-          node-version: '18'  # Node.js 18.x LTSを使用
+          python-version: '3.11'
 
-      - name: Install frontend dependencies
+      - name: Create and start virtual environment
         run: |
-          cd frontend
-          npm ci
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
         
-      # Optional: Add step to run tests here if you have any
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
-      - name: Zip frontend artifact for deployment
-        run: |
-          cd frontend
-          zip -r ../frontend.zip ./*
+      - name: Zip artifact for deployment
+        run: zip release.zip ./* -r
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-app
-          path: frontend.zip
+          name: python-app
+          path: |
+            release.zip
+            !venv/
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,22 +56,23 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: frontend-app
+          name: python-app
 
       - name: Unzip artifact for deployment
-        run: unzip frontend.zip -d frontend
+        run: unzip release.zip
 
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_764D39AB6F884A5FB4F2A047280B9A71 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_11D34E48E2FA474FBB8249564D547CDA }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A66B402179224429968B50B10D5ACB8A }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_517B7ED437114BB5BCB49752A9724DCA }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7E8AEB751F5945979DC45A9E70083149 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_60551CCD2D344AF1B1BD2F87072BE05C }}
 
-      - name: 'Deploy frontend to Azure Web App'
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: 'tech0-gen-6-step4-studentwebapp-6'
           slot-name: 'Production'
-          package: frontend
+          
