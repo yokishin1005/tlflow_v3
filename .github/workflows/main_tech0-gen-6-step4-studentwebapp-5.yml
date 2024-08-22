@@ -1,8 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
-name: Build and deploy Python app to Azure Web App - tech0-gen-6-step4-studentwebapp-5
+name: Build and deploy Python Backend to Azure Web App - tech0-gen-6-step4-studentwebapp-18
 
 on:
   push:
@@ -28,20 +24,22 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          cd Backend
+          pip install -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: |
+          cd Backend
+          zip release.zip ./* -r
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            release.zip
-            !venv/
+          path: Backend/release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -61,18 +59,16 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_718C12E5605F4EDEB286CF7394462E1A }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9662C9122C7F4338B92AC0BBE532B47E }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3277ECDF87314B6983EB7BE5D6A4313D }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_764D39AB6F884A5FB4F2A047280B9A71 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_11D34E48E2FA474FBB8249564D547CDA }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A66B402179224429968B50B10D5ACB8A }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'tech0-gen-6-step4-studentwebapp-5'
+          app-name: 'tech0-gen-6-step4-studentwebapp-18'
           slot-name: 'Production'
-          
