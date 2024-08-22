@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  NODE_VERSION: '18.x'
+  AZURE_WEBAPP_NAME: tech0-gen-6-step4-studentwebapp-6
+
 permissions:
   contents: read
 
@@ -19,7 +23,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -49,10 +53,6 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -69,10 +69,31 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7E8AEB751F5945979DC45A9E70083149 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_60551CCD2D344AF1B1BD2F87072BE05C }}
 
+      - name: 'Update Azure Web App settings'
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          app-settings-json: |
+            [
+              {
+                "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                "value": "true"
+              },
+              {
+                "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                "value": "${{ env.NODE_VERSION }}"
+              }
+            ]
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'tech0-gen-6-step4-studentwebapp-6'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
           package: release
+
+      - name: 'Check deployment status'
+        run: |
+          echo "Deployment status: ${{ steps.deploy-to-webapp.outputs.status }}"
+          echo "Deployment output: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
