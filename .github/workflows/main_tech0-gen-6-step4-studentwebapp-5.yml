@@ -1,7 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python app to Azure Web App - tech0-gen-6-step4-studentwebapp-5
 
 on:
@@ -10,6 +6,14 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: '3.11'
+  AZURE_WEBAPP_NAME: tech0-gen-6-step4-studentwebapp-5
+
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,35 +21,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Create and start virtual environment
         run: |
           python -m venv venv
           source venv/bin/activate
-      
+
       - name: Install dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
         run: |
           cd backend
-          zip release.zip ./* -r
+          zip -r ../release.zip ./* -x "*.pyc" "__pycache__"
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            backend/release.zip
-            !backend/venv/
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,9 +54,6 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
-    permissions:
-      id-token: write #This is required for requesting the JWT
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -64,18 +61,45 @@ jobs:
           name: python-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
-      
+        run: unzip release.zip -d release
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1319E1202D3C492DBEA63ACC2F98B92D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3AEF91FFAC1C4DDF9624FC360EE79491 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F338B983FCE340B7B7ED3843D2726902 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_517B7ED437114BB5BCB49752A9724DCA }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7E8AEB751F5945979DC45A9E70083149 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_60551CCD2D344AF1B1BD2F87072BE05C }}
+
+      - name: 'Update Azure Web App settings'
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          app-settings-json: |
+            [
+              {
+                "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                "value": "true"
+              },
+              {
+                "name": "PYTHON_VERSION",
+                "value": "${{ env.PYTHON_VERSION }}"
+              },
+              {
+                "name": "WEBSITE_RUN_FROM_PACKAGE",
+                "value": "0"
+              }
+            ]
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'tech0-gen-6-step4-studentwebapp-5'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
+          package: release
+
+      - name: 'Check deployment status and logs'
+        run: |
+          echo "Deployment status: ${{ steps.deploy-to-webapp.outputs.status }}"
+          echo "Deployment output: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+          az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group <your-resource-group-name>
