@@ -70,5 +70,5 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'tech0-gen-6-step4-studentwebapp-18'
+          app-name: 'tech0-gen-6-step4-studentwebapp-5'
           slot-name: 'Production'
