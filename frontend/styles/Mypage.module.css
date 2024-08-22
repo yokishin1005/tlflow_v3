@@ -36,13 +36,14 @@
 }
 
 .buttons button {
+    margin-top: 20px;
     padding: 10px 20px;
     background-color: #FFA500;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 100px;
+    font-size: 15px;
 }
 
 .buttons button:hover {

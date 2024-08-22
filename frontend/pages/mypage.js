@@ -8,7 +8,7 @@ import CareerInfo from '../components/CareerInfo';
 import SkillsInfo from '../components/SkillsInfo';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useUserData from '../hooks/useUserData';
-import styles from '../styles/MyPage.module.css';
+import styles from '../styles/Mypage.module.css';
 
 export default function MyPage() {
   const router = useRouter();
