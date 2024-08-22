@@ -71,7 +71,7 @@ IF NOT EXIST "%DEPLOYMENT_TARGET%\env" (
 )
 
 :: 4. Install packages
-echo Pip install requirements.
+echo pip install requirements.
 :: カスタマイズ：requirements.txtの場所を明示的に指定
 call "%DEPLOYMENT_TARGET%\env\Scripts\python.exe" -m pip install --upgrade -r "%DEPLOYMENT_SOURCE%\backend\requirements.txt"
 IF !ERRORLEVEL! NEQ 0 goto error
