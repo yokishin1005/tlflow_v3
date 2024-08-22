@@ -11,7 +11,6 @@ env:
   NODE_VERSION: '18.x'
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -68,7 +67,6 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1319E1202D3C492DBEA63ACC2F98B92D }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3AEF91FFAC1C4DDF9624FC360EE79491 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F338B983FCE340B7B7ED3843D2726902 }}
-          auth-type: 'oidc'
 
       - name: 'Update Azure Web App settings'
         uses: azure/appservice-settings@v1
