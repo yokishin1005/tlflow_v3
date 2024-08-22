@@ -7,17 +7,12 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '18.x'
   AZURE_WEBAPP_NAME: tech0-gen-6-step4-studentwebapp-6
-
-permissions:
-  contents: read
-  id-token: write
+  NODE_VERSION: '18.x'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -39,12 +34,12 @@ jobs:
       - name: Zip artifact for deployment
         run: |
           cd frontend
-          zip -r ../release.zip .next package.json package-lock.json public next.config.mjs
+          zip -r ../release.zip .next package.json package-lock.json public
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
+          name: nextjs-app
           path: release.zip
 
   deploy:
@@ -58,7 +53,7 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: node-app
+          name: nextjs-app
 
       - name: Unzip artifact for deployment
         run: unzip release.zip -d release
@@ -66,9 +61,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_517B7ED437114BB5BCB49752A9724DCA }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7E8AEB751F5945979DC45A9E70083149 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_60551CCD2D344AF1B1BD2F87072BE05C }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1319E1202D3C492DBEA63ACC2F98B92D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3AEF91FFAC1C4DDF9624FC360EE79491 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F338B983FCE340B7B7ED3843D2726902 }}
 
       - name: 'Update Azure Web App settings'
         uses: azure/appservice-settings@v1
@@ -83,6 +78,14 @@ jobs:
               {
                 "name": "WEBSITE_NODE_DEFAULT_VERSION",
                 "value": "${{ env.NODE_VERSION }}"
+              },
+              {
+                "name": "WEBSITE_RUN_FROM_PACKAGE",
+                "value": "0"
+              },
+              {
+                "name": "NODE_ENV",
+                "value": "production"
               }
             ]
 
@@ -94,7 +97,6 @@ jobs:
           slot-name: 'Production'
           package: release
 
-      - name: 'Check deployment status'
+      - name: 'Check deployment logs'
         run: |
-          echo "Deployment status: ${{ steps.deploy-to-webapp.outputs.status }}"
-          echo "Deployment output: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+          az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group <your-resource-group-name>
