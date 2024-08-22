@@ -102,4 +102,4 @@ jobs:
 
       - name: 'Check deployment logs'
         run: |
-          az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group <your-resource-group-name>
+          az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group <tech0-gen-6-step4-studentwebapp-6>
