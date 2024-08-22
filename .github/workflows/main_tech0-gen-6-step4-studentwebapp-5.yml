@@ -1,4 +1,4 @@
-name: Build and deploy Python backend to Azure Web App - tech0-gen-6-step4-studentwebapp-18
+name: Build and deploy Python Backend to Azure Web App - tech0-gen-6-step4-studentwebapp-18
 
 on:
   push:
