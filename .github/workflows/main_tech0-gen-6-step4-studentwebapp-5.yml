@@ -1,4 +1,4 @@
-name: Build and deploy Python Backend to Azure Web App - tech0-gen-6-step4-studentwebapp-18
+name: Build and deploy Python backend to Azure Web App - tech0-gen-6-step4-studentwebapp-18
 
 on:
   push:
@@ -32,14 +32,14 @@ jobs:
 
       - name: Zip artifact for deployment
         run: |
-          cd Backend
+          cd backend
           zip release.zip ./* -r
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: Backend/release.zip
+          path: backend/release.zip
 
   deploy:
     runs-on: ubuntu-latest
