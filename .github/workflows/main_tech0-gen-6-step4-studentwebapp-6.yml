@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - tech0-gen-6-step4-studentwebapp-6
+name: Build and deploy Next.js app to Azure Web App - tech0-gen-6-step4-studentwebapp-6
 
 on:
   push:
@@ -17,31 +17,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python version
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.11'
+          node-version: '18'
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-      
       - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Next.js app
+        run: |
+          cd frontend
+          npm run build
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: |
+          cd frontend
+          zip -r ../release.zip .next package.json package-lock.json public
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: python-app
-          path: |
-            release.zip
-            !venv/
+          name: node-app
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,25 +49,22 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: python-app
+          name: node-app
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_006FAE806D0C4534AF25111C34597D1B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1EB4A1619F634D1CA87B7CB6F98043D5 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2DE4BE9658EC4F159B8A2E1E14BF7F34 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_517B7ED437114BB5BCB49752A9724DCA }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7E8AEB751F5945979DC45A9E70083149 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_60551CCD2D344AF1B1BD2F87072BE05C }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -75,4 +72,4 @@ jobs:
         with:
           app-name: 'tech0-gen-6-step4-studentwebapp-6'
           slot-name: 'Production'
-          
+          package: .
