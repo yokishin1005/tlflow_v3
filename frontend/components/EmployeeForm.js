@@ -14,7 +14,9 @@ export default function EmployeeForm({ onSubmit }) {
     hire_date: null,
     recruitment_type: '',
     grade_name: '',
+    grade_id: null,
     department_name: '',
+    department_id: null,
     rirekisho: null,
     resume: null,
     bigfive: null,
@@ -70,6 +72,24 @@ export default function EmployeeForm({ onSubmit }) {
 
   const handleDateChange = (date, name) => {
     setFormData(prevData => ({ ...prevData, [name]: date }));
+  };
+
+  const handleGradeChange = (e) => {
+    const selectedGrade = grades.find(grade => grade.grade_name === e.target.value);
+    setFormData(prevData => ({
+      ...prevData,
+      grade_name: e.target.value,
+      grade_id: selectedGrade ? selectedGrade.grade_id : null
+    }));
+  };
+
+  const handleDepartmentChange = (e) => {
+    const selectedDepartment = departments.find(department => department.department_name === e.target.value);
+    setFormData(prevData => ({
+      ...prevData,
+      department_name: e.target.value,
+      department_id: selectedDepartment ? selectedDepartment.department_id : null
+    }));
   };
 
   const processFile = async (file, fileType) => {
@@ -324,7 +344,7 @@ export default function EmployeeForm({ onSubmit }) {
               採用区分
             </label>
             <div className="mt-1 sm:mt-0 sm:col-span-2">
-            <select
+              <select
                 id="recruitment_type"
                 name="recruitment_type"
                 value={formData.recruitment_type}
@@ -348,7 +368,7 @@ export default function EmployeeForm({ onSubmit }) {
                 id="grade_name"
                 name="grade_name"
                 value={formData.grade_name}
-                onChange={handleChange}
+                onChange={handleGradeChange}
                 required
                 className="max-w-lg block focus:ring-indigo-500 focus:border-indigo-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md"
               >
@@ -371,7 +391,7 @@ export default function EmployeeForm({ onSubmit }) {
                 id="department_name"
                 name="department_name"
                 value={formData.department_name}
-                onChange={handleChange}
+                onChange={handleDepartmentChange}
                 required
                 className="max-w-lg block focus:ring-indigo-500 focus:border-indigo-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md"
               >
@@ -463,6 +483,23 @@ export default function EmployeeForm({ onSubmit }) {
                 name="conscientiousness_score"
                 id="conscientiousness_score"
                 value={formData.conscientiousness_score}
+                onChange={handleChange}
+                required
+                className="max-w-lg block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:max-w-xs sm:text-sm border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+
+          <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              パスワード
+            </label>
+            <div className="mt-1 sm:mt-0 sm:col-span-2">
+              <input
+                type="password"
+                name="password"
+                id="password"
+                value={formData.password}
                 onChange={handleChange}
                 required
                 className="max-w-lg block w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:max-w-xs sm:text-sm border-gray-300 rounded-md"

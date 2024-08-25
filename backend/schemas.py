@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 class EmployeeCreate(BaseModel):
     employee_name: str
@@ -9,8 +9,8 @@ class EmployeeCreate(BaseModel):
     academic_background: str
     hire_date: date
     recruitment_type: str
-    grade_name: str
-    department_name: str
+    grade_id: int
+    department_id: int
     neuroticism_score: int
     extraversion_score: int
     openness_score: int
@@ -49,12 +49,6 @@ class EmployeeResponse(BaseModel):
 
     class Config:
         orm_mode = True
-
-class ResumeProcess(BaseModel):
-    text: str
-
-class ResumeAnalysis(BaseModel):
-    text: str
 
 class GradeResponse(BaseModel):
     grade_id: int

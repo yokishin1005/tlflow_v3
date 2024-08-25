@@ -2,16 +2,25 @@ import chardet
 from openai import OpenAI
 from typing import Dict, Any
 from io import BytesIO
+import json
 import re
 from typing import Optional
+from fastapi import HTTPException
 from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
 from main import Session
 import datetime
 from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember
 from schemas import EmployeeCreate, EmployeeResponse
+import logging
+import bcrypt
 
 client = OpenAI()
+
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password.decode('utf-8')
 
 async def process_rirekisho_file(contents: bytes, content_type: str) -> Dict[str, Any]:
     if content_type == "application/pdf":
@@ -182,55 +191,64 @@ def create_employee_id(db: Session):
         new_id = "SAPPORO0001"
     return new_id
 
-def save_employee_data(db: Session, employee: EmployeeCreate, picture: Optional[bytes] = None):
+def save_employee_data(db: Session, employee: EmployeeCreate, picture: bytes = None):
     try:
+        # Employee IDを生成
         new_employee_id = create_employee_id(db)
-        
+
         new_employee = Employee(
             employee_id=new_employee_id,
             employee_name=employee.employee_name,
-            birthdate=datetime.datetime.strptime(employee.birthdate, "%Y-%m-%d").date(),
+            birthdate=employee.birthdate,
             gender=employee.gender,
             academic_background=employee.academic_background,
             hire_date=employee.hire_date,
             recruitment_type=employee.recruitment_type,
             career_info_detail=employee.career_info_detail,
-            career_info_vector=json.dumps(career_info_vector),
+            career_info_vector=employee.career_info_vector,  # リストのまま保存
             personality_detail=employee.personality_detail,
-            personality_vector=json.dumps(personality_vector),
-            neuroticism_score=employee.neuroticism_score,          # 神経症傾向スコア
-            extraversion_score=employee.extraversion_score,        # 外向性スコア
-            openness_score=employee.openness_score,               # 経験への開放性スコア
-            agreeableness_score=employee.agreeableness_score,      # 協調性スコア
-            conscientiousness_score=employee.conscientiousness_score, # 誠実性スコア
-            bigfive_scores=json.dumps(employee.bigfive_scores)
+            personality_vector=employee.personality_vector,  # リストのまま保存
+            neuroticism_score=employee.neuroticism_score,
+            extraversion_score=employee.extraversion_score,
+            openness_score=employee.openness_score,
+            agreeableness_score=employee.agreeableness_score,
+            conscientiousness_score=employee.conscientiousness_score,
+            password_hash=hash_password(employee.password),  # パスワードをハッシュ化して保存
         )
         
         if picture:
-            new_employee.picture = picture  # 画像データを保存
+            new_employee.picture = picture
 
         db.add(new_employee)
         db.flush()
-        
-        grade = db.query(Grade).filter(Grade.grade_name == employee.grade_name).first()
-        if grade:
-            employee_grade = EmployeeGrade(employee_id=new_employee.employee_id, grade_id=grade.grade_id)
-            db.add(employee_grade)
-        
-        department = db.query(Department).filter(Department.department_name == employee.department_name).first()
-        if department:
-            department_member = DepartmentMember(employee_id=new_employee.employee_id, department_id=department.department_id)
-            db.add(department_member)
-        
-        db.commit()
-        db.refresh(new_employee)
-        
-        return new_employee
-    
-    except Exception as e:
-        db.rollback()  # データベース操作でエラーが発生した場合にロールバック
-        raise HTTPException(status_code=400, detail=f"Error saving employee data: {str(e)}")
 
+        # EmployeeGradeへの保存処理
+        employee_grade = EmployeeGrade(
+            employee_id=new_employee_id,
+            grade_id=employee.grade_id
+        )
+        db.add(employee_grade)
+
+        # DepartmentMemberへの保存処理
+        department_member = DepartmentMember(
+            employee_id=new_employee_id,
+            department_id=employee.department_id
+        )
+        db.add(department_member)
+
+        db.commit()
+        return new_employee
+
+    except HTTPException as http_err:
+        db.rollback()
+        logging.error(f"HTTP error occurred: {http_err.detail}")
+        raise http_err
+
+    except Exception as e:
+        db.rollback()
+        logging.exception("Unexpected error occurred while saving employee data")
+        raise HTTPException(status_code=500, detail="Error saving employee data")
+    
 def get_grades(db: Session):
     return db.query(Grade).all()
 
