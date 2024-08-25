@@ -1,19 +1,18 @@
 import chardet
 from openai import OpenAI
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 from io import BytesIO
 import json
-import re
-from typing import Optional
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
-from main import Session
+from sqlalchemy.orm import Session
 import datetime
 from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember
 from schemas import EmployeeCreate, EmployeeResponse
 import logging
 import bcrypt
+import base64
 
 client = OpenAI()
 
@@ -22,8 +21,9 @@ def hash_password(password: str) -> str:
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
-async def process_rirekisho_file(contents: bytes, content_type: str) -> Dict[str, Any]:
-    if content_type == "application/pdf":
+async def process_rirekisho_file(file: UploadFile) -> Dict[str, Any]:
+    contents = await file.read()
+    if file.content_type == "application/pdf":
         text = extract_text_from_pdf(contents)
     else:
         encoding = chardet.detect(contents)['encoding'] or 'utf-8'
@@ -69,7 +69,8 @@ def process_rirekisho(text: str) -> Dict[str, Any]:
 
     return info_dict
 
-async def process_resume_file(contents: bytes) -> Dict[str, Any]:
+async def process_resume_file(file: UploadFile) -> Dict[str, Any]:
+    contents = await file.read()
     text = extract_text_from_pdf(contents)
     return process_resume(text)
 
@@ -98,20 +99,19 @@ def process_resume(text: str) -> Dict[str, Any]:
     )
 
     analysis = response.choices[0].message.content.strip()
-    embedding = get_embedding(analysis, model='text-embedding-3-large')
+    embedding = get_embedding(analysis)
 
     return {
         "analysis": analysis,
         "vector": embedding
     }
 
-async def process_bigfive_file(contents: bytes) -> Dict[str, Any]:
+async def process_bigfive_file(file: UploadFile) -> Dict[str, Any]:
+    contents = await file.read()
     text = extract_text_from_pdf(contents)
     return process_bigfive(text)
 
-# Example of how to use this in your process_bigfive function
 def process_bigfive(text: str) -> Dict[str, Any]:
-
     prompt = f"""
     以下のBigFive性格検査の結果を詳細に分析し、その人の性格特性から読み取ることのできる以下の点について、日本語で具体的に説明してください：
 
@@ -138,51 +138,36 @@ def process_bigfive(text: str) -> Dict[str, Any]:
     )
 
     analysis = response.choices[0].message.content.strip()
-    embedding = get_embedding(analysis, model='text-embedding-3-large')
+    embedding = get_embedding(analysis)
 
     return {
         "detailed_analysis": analysis,
         "vector": embedding
     }
 
-
-def update_employee_career(db: Session, employee: Employee, career_info: str):
-    employee.career_info_detail = career_info
-    employee.career_info_processed = False
-    db.commit()
-    db.refresh(employee)
-    return employee
-
-async def process_career_info(employee_id: str, career_info: str):
-    db = SessionLocal()
-    try:
-        employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
-        if employee:
-            career_info_embedding = await get_embedding_async(career_info)
-            employee.career_info_vector = json.dumps(career_info_embedding)
-            employee.career_info_processed = True
-            db.commit()
-    finally:
-        db.close()
-
-async def process_personality(db: Session, employee_id: str, personality_data: str):
-    employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
-    if not employee:
-        raise ValueError(f"Employee with id {employee_id} not found")
-    
-    personality_embedding = await get_embedding_async(personality_data)
-    employee.personality_vector = json.dumps(personality_embedding)
-    db.commit()
-    db.refresh(employee)
-    return employee
-
-async def get_embedding_async(text: str, model: str = "text-embedding-3-large") -> list[float]:
+def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[float]:
     text = text.replace("\n", " ")
-    response = await client.embeddings.create(input=[text], model=model)
-    return response.data[0].embedding
+    return client.embeddings.create(input=[text], model=model).data[0].embedding
 
+async def process_career_files(rirekisho: UploadFile, resume: UploadFile) -> Tuple[str, list[float]]:
+    rirekisho_info = await process_rirekisho_file(rirekisho) if rirekisho else {}
+    resume_info = await process_resume_file(resume) if resume else {}
+    
+    career_info_detail = f"履歴書情報: {json.dumps(rirekisho_info, ensure_ascii=False)}\n"
+    career_info_detail += f"職務経歴書情報: {resume_info.get('analysis', '')}"
+    
+    career_info_vector = resume_info.get('vector', [])
+    
+    return career_info_detail, career_info_vector
 
-def create_employee_id(db: Session):
+async def process_personality_file(bigfive: UploadFile) -> Tuple[str, list[float]]:
+    if not bigfive:
+        return "", []
+    
+    bigfive_info = await process_bigfive_file(bigfive)
+    return bigfive_info['detailed_analysis'], bigfive_info['vector']
+
+def create_employee_id(db: Session) -> str:
     last_employee = db.query(Employee).order_by(Employee.employee_id.desc()).first()
     if last_employee:
         last_id = int(last_employee.employee_id[7:])
@@ -191,9 +176,9 @@ def create_employee_id(db: Session):
         new_id = "SAPPORO0001"
     return new_id
 
-def save_employee_data(db: Session, employee: EmployeeCreate, picture: bytes = None):
+def save_employee_data(db: Session, employee: EmployeeCreate, career_info_detail: str, career_info_vector: list[float], 
+                       personality_detail: str, personality_vector: list[float], picture: Optional[bytes] = None) -> Employee:
     try:
-        # Employee IDを生成
         new_employee_id = create_employee_id(db)
 
         new_employee = Employee(
@@ -204,32 +189,28 @@ def save_employee_data(db: Session, employee: EmployeeCreate, picture: bytes = N
             academic_background=employee.academic_background,
             hire_date=employee.hire_date,
             recruitment_type=employee.recruitment_type,
-            career_info_detail=employee.career_info_detail,
-            career_info_vector=employee.career_info_vector,  # リストのまま保存
-            personality_detail=employee.personality_detail,
-            personality_vector=employee.personality_vector,  # リストのまま保存
+            career_info_detail=career_info_detail,
+            career_info_vector=career_info_vector,
+            personality_detail=personality_detail,
+            personality_vector=personality_vector,
             neuroticism_score=employee.neuroticism_score,
             extraversion_score=employee.extraversion_score,
             openness_score=employee.openness_score,
             agreeableness_score=employee.agreeableness_score,
             conscientiousness_score=employee.conscientiousness_score,
-            password_hash=hash_password(employee.password),  # パスワードをハッシュ化して保存
+            password_hash=hash_password(employee.password),
+            picture=picture
         )
-        
-        if picture:
-            new_employee.picture = picture
 
         db.add(new_employee)
         db.flush()
 
-        # EmployeeGradeへの保存処理
         employee_grade = EmployeeGrade(
             employee_id=new_employee_id,
             grade_id=employee.grade_id
         )
         db.add(employee_grade)
 
-        # DepartmentMemberへの保存処理
         department_member = DepartmentMember(
             employee_id=new_employee_id,
             department_id=employee.department_id
@@ -239,16 +220,39 @@ def save_employee_data(db: Session, employee: EmployeeCreate, picture: bytes = N
         db.commit()
         return new_employee
 
-    except HTTPException as http_err:
-        db.rollback()
-        logging.error(f"HTTP error occurred: {http_err.detail}")
-        raise http_err
-
     except Exception as e:
         db.rollback()
         logging.exception("Unexpected error occurred while saving employee data")
         raise HTTPException(status_code=500, detail="Error saving employee data")
-    
+
+def create_employee_response(employee: Employee, db: Session) -> EmployeeResponse:
+    grade = db.query(Grade).join(EmployeeGrade).filter(EmployeeGrade.employee_id == employee.employee_id).first()
+    department = db.query(Department).join(DepartmentMember).filter(DepartmentMember.employee_id == employee.employee_id).first()
+
+    picture_base64 = base64.b64encode(employee.picture).decode('utf-8') if employee.picture else None
+
+    return EmployeeResponse(
+        employee_id=employee.employee_id,
+        employee_name=employee.employee_name,
+        birthdate=employee.birthdate,
+        gender=employee.gender,
+        academic_background=employee.academic_background,
+        hire_date=employee.hire_date,
+        recruitment_type=employee.recruitment_type,
+        grade_name=grade.grade_name if grade else None,
+        department_name=department.department_name if department else None,
+        neuroticism_score=employee.neuroticism_score,
+        extraversion_score=employee.extraversion_score,
+        openness_score=employee.openness_score,
+        agreeableness_score=employee.agreeableness_score,
+        conscientiousness_score=employee.conscientiousness_score,
+        career_info_detail=employee.career_info_detail,
+        career_info_vector=employee.career_info_vector,
+        personality_detail=employee.personality_detail,
+        personality_vector=employee.personality_vector,
+        picture=picture_base64
+    )
+
 def get_grades(db: Session):
     return db.query(Grade).all()
 
@@ -260,7 +264,3 @@ def get_employees(db: Session):
 
 def get_employee_by_id(db: Session, employee_id: str):
     return db.query(Employee).filter(Employee.employee_id == employee_id).first()
-
-def get_embedding(text: str, model="text-embedding-3-small"):
-    text = text.replace("\n", " ")
-    return client.embeddings.create(input=[text], model=model).data[0].embedding

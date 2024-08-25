@@ -35,12 +35,12 @@ class Employee(Base):
     career_info_vector = Column(JSON, nullable=False)
     personality_detail = Column(String, nullable=False)
     personality_vector = Column(JSON, nullable=False)
-    neuroticism_score = Column(Integer, nullable=False)   # 神経症傾向スコア
-    extraversion_score = Column(Integer, nullable=False)  # 外向性スコア
-    openness_score = Column(Integer, nullable=False)      # 経験への開放性スコア
-    agreeableness_score = Column(Integer, nullable=False) # 協調性スコア
-    conscientiousness_score = Column(Integer, nullable=False) # 誠実性スコア
-    password_hash = Column(String, nullable=False) 
+    neuroticism_score = Column(Integer, nullable=False)
+    extraversion_score = Column(Integer, nullable=False)
+    openness_score = Column(Integer, nullable=False)
+    agreeableness_score = Column(Integer, nullable=False)
+    conscientiousness_score = Column(Integer, nullable=False)
+    password_hash = Column(String, nullable=False)
 
     grades = relationship("EmployeeGrade", back_populates="employee")
     departments = relationship("DepartmentMember", back_populates="employee")
