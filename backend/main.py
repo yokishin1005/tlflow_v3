@@ -1,98 +1,129 @@
-# /Users/takuya/Documents/タレントフロー1.3/backend/main.py
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
-from auth import SECRET_KEY, ALGORITHM, authenticate_user, create_access_token
-from utils import (
-    get_all_employee_data, get_all_job_posts, prepare_recommendation_data, generate_recommendations,
-    get_employee_vector, get_all_job_post_vectors, get_top_similar_jobs,
-    get_job_details, EmployeeVectorNotFound
-)
-from database import get_db, engine
-import models
+from typing import List,Optional
+import models, schemas, utils
+from database import SessionLocal, engine
+import chardet
+from fastapi.responses import JSONResponse
+import logging
+from utils import process_rirekisho, extract_text_from_pdf
+from fastapi.exceptions import RequestValidationError
+
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# CORS設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # フロントエンドのURL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-models.Base.metadata.create_all(bind=engine)
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+# データベースセッションを取得するための依存関係
+def get_db():
+    db = SessionLocal()
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=400, detail="Invalid authentication credentials")
-        user = db.query(models.Employee).filter(models.Employee.name == username).first()
-        if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
-        return user
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
-
-@app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="ユーザー名またはパスワードが正しくありません",
-            headers={"WWW-Authenticate": "Bearer"},
+        yield db
+    finally:
+        db.close()
+        
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
+        
+@app.post("/employees/", response_model=schemas.EmployeeResponse)
+async def register_employee(
+    employee_name: str = Form(...),
+    birthdate: str = Form(...),
+    gender: str = Form(...),
+    academic_background: str = Form(...),
+    hire_date: str = Form(...),
+    recruitment_type: str = Form(...),
+    grade_name: str = Form(...),
+    department_name: str = Form(...),
+    neuroticism_score: int = Form(...),
+    extraversion_score: int = Form(...),
+    openness_score: int = Form(...),
+    agreeableness_score: int = Form(...),
+    conscientiousness_score: int = Form(...),
+    password: str = Form(...),
+    rirekisho: Optional[UploadFile] = File(None),
+    resume: Optional[UploadFile] = File(None),
+    bigfive: Optional[UploadFile] = File(None),
+    picture: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    try:
+        # 受け取ったデータを適切に保存
+        picture_data = await picture.read() if picture else None
+        new_employee = utils.save_employee_data(
+            db=db, 
+            employee_name=employee_name,
+            birthdate=birthdate,
+            gender=gender,
+            academic_background=academic_background,
+            hire_date=hire_date,
+            recruitment_type=recruitment_type,
+            grade_name=grade_name,
+            department_name=department_name,
+            neuroticism_score=neuroticism_score,
+            extraversion_score=extraversion_score,
+            openness_score=openness_score,
+            agreeableness_score=agreeableness_score,
+            conscientiousness_score=conscientiousness_score,
+            password=password,
+            rirekisho=rirekisho,
+            resume=resume,
+            bigfive=bigfive,
+            picture=picture_data
         )
-    access_token = create_access_token(data={"sub": user.name})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@app.get("/users/me")
-async def read_users_me(current_user: models.Employee = Depends(get_current_user), db: Session = Depends(get_db)):
-    employee_data = get_all_employee_data(db, current_user)
-    if employee_data is None:
-        raise HTTPException(status_code=500, detail="Error retrieving employee data")
-    return employee_data
-
-# main.py の recommend_jobs エンドポイントを更新
-@app.post("/recommendations")
-async def recommend_jobs(current_user: models.Employee = Depends(get_current_user), db: Session = Depends(get_db)):
-    try:
-        # データ取得部分
-        employee_vector = get_employee_vector(db, current_user.employee_id)
-        job_post_vectors = get_all_job_post_vectors(db)
-            
-        # パーセンテージで類似度を取得
-        top_job_ids = get_top_similar_jobs(employee_vector, job_post_vectors, return_percentage=True)
-        
-        top_jobs = get_job_details(db, [job['job_id'] for job in top_job_ids])
-        employee_data = get_all_employee_data(db, current_user)
-
-        if employee_data is None:
-            raise HTTPException(status_code=500, detail="Error retrieving employee data")
-
-        # データ準備
-        prepared_data = prepare_recommendation_data(employee_data, top_jobs, employee_vector)
-
-        # 推薦生成
-        recommendations = generate_recommendations(prepared_data)
-        
-        # 類似度パーセンテージも含めて返す
-        for i, job in enumerate(top_jobs):
-            job['similarity'] = top_job_ids[i]['similarity']
-        
-        return {"recommendations": recommendations, "top_jobs": top_jobs}
-    
-    except EmployeeVectorNotFound:
-        raise HTTPException(status_code=404, detail="Employee vector not found")
+        return new_employee
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error in job recommendation: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error registering employee: {str(e)}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+@app.post("/process_rirekisho/", response_model=dict)
+async def process_rirekisho_endpoint(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        return await utils.process_rirekisho_file(contents, file.content_type)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
+
+@app.post("/process_resume/", response_model=dict)
+async def process_resume_endpoint(file: UploadFile = File(...)):
+    contents = await file.read()
+    return await utils.process_resume_file(contents)
+
+@app.post("/process_bigfive/", response_model=dict)
+async def process_bigfive_endpoint(file: UploadFile = File(...)):
+    contents = await file.read()
+    return await utils.process_bigfive_file(contents)
+
+@app.get("/grades/", response_model=List[schemas.GradeResponse])
+async def get_grades(db: Session = Depends(get_db)):
+    return utils.get_grades(db)
+
+@app.get("/departments/", response_model=List[schemas.DepartmentResponse])
+async def get_departments(db: Session = Depends(get_db)):
+    return utils.get_departments(db)
+
+@app.get("/employees/", response_model=List[schemas.EmployeeResponse])
+async def get_employees(db: Session = Depends(get_db)):
+    return utils.get_employees(db)
+
+@app.get("/employees/{employee_id}", response_model=schemas.EmployeeResponse)
+async def get_employee(employee_id: str, db: Session = Depends(get_db)):
+    employee = utils.get_employee_by_id(db, employee_id)
+    if employee is None:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    return employee

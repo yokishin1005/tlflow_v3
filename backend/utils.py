@@ -1,179 +1,248 @@
-# /Users/takuya/Documents/タレントフロー1.3/backend/utils.py
+import chardet
 from openai import OpenAI
-import json
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from models import JobPost, JobPostVector, EmployeeVector, Employee
-import os
-from dotenv import load_dotenv
-from sqlalchemy.orm import Session
-from typing import List, Dict, Any, Optional
-
-# 定数
-EMBEDDING_MODEL = "text-embedding-ada-002"
-GPT_MODEL = "gpt-4o"
-TOP_N_JOBS = 5
-
-# 環境変数の読み込み
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-class EmployeeVectorNotFound(Exception):
-    """従業員ベクトルが見つからない場合の例外"""
-    pass
+from typing import Dict, Any
+from io import BytesIO
+import re
+from typing import Optional
+from pdfminer.high_level import extract_text_to_fp
+from pdfminer.layout import LAParams
+from main import Session
+import datetime
+from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember
+from schemas import EmployeeCreate, EmployeeResponse
 
 client = OpenAI()
-def get_embedding(text, model= EMBEDDING_MODEL):
-    text = text.replace("\n", " ")
-    return client.embeddings.create(input=[text], model=model).data[0].embedding
 
-def get_employee_vector(db: Session, employee_id: int) -> List[float]:
-    """
-    従業員のベクトルを取得する
-    
-    :param db: データベースセッション
-    :param employee_id: 従業員ID
-    :return: 従業員ベクトル
-    :raises EmployeeVectorNotFound: 従業員ベクトルが見つからない場合
-    """
-    employee_vector = db.query(EmployeeVector).filter(EmployeeVector.employee_id == employee_id).first()
-    if employee_vector is None:
-        raise EmployeeVectorNotFound(f"Employee vector not found for id: {employee_id}")
-    return json.loads(employee_vector.vector)
+async def process_rirekisho_file(contents: bytes, content_type: str) -> Dict[str, Any]:
+    if content_type == "application/pdf":
+        text = extract_text_from_pdf(contents)
+    else:
+        encoding = chardet.detect(contents)['encoding'] or 'utf-8'
+        text = contents.decode(encoding)
 
-def get_all_job_post_vectors(db: Session) -> Dict[int, List[float]]:
-    """
-    全ての求人ポストのベクトルを取得する
-    
-    :param db: データベースセッション
-    :return: 求人IDをキー、ベクトルを値とする辞書
-    """
-    job_post_vectors = db.query(JobPostVector).all()
-    return {jpv.job_post_id: json.loads(jpv.vector) for jpv in job_post_vectors}
+    return process_rirekisho(text)
 
-def get_top_similar_jobs(employee_vector: List[float], job_vectors: Dict[int, List[float]], top_n: int = TOP_N_JOBS, return_percentage: bool = False) -> List[Dict[str, Any]]:
-    """
-    最も類似度の高い求人IDとオプションでパーセンテージを取得する
-    
-    :param employee_vector: 従業員ベクトル
-    :param job_vectors: 求人ベクトルの辞書
-    :param top_n: 取得する上位の数
-    :param return_percentage: 類似度をパーセンテージで返すかどうかのフラグ
-    :return: 類似度の高い求人IDのリストとオプションで類似度パーセンテージ
-    """
-    job_ids = list(job_vectors.keys())
-    job_vector_array = np.array(list(job_vectors.values()))
-    similarities = cosine_similarity([employee_vector], job_vector_array)[0]
-    
-    # 類似度をパーセンテージに変換
-    if return_percentage:
-        similarities = [round(similarity * 100, 2) for similarity in similarities]
-    
-    top_indices = np.argsort(similarities)[-top_n:][::-1]
-    
-    return [{'job_id': job_ids[i], 'similarity': similarities[i]} for i in top_indices]
+def extract_text_from_pdf(contents: bytes) -> str:
+    output_string = BytesIO()
+    laparams = LAParams()
+    extract_text_to_fp(BytesIO(contents), output_string, laparams=laparams)
+    return output_string.getvalue().decode()
 
-def get_job_details(db: Session, job_ids: List[int]) -> List[Dict[str, Any]]:
-    """
-    求人IDのリストから求人詳細を取得する
+def process_rirekisho(text: str) -> Dict[str, Any]:
+    prompt = f"""
+    以下の履歴書から以下の情報を抽出してください:
+    名前 (Name)
+    生年月日 (Birthdate) (利用可能な場合)
+    性別 (Gender) (利用可能な場合)
+    学歴 (Academic Background)
+    経歴 (Career Information)
     
-    :param db: データベースセッション
-    :param job_ids: 求人IDのリスト
-    :return: 求人詳細のリスト
+    履歴書:
+    {text}
     """
-    jobs = db.query(JobPost).filter(JobPost.job_post_id.in_(job_ids)).all()
-    return [{"job_post_id": job.job_post_id, "job_title": job.job_title, "job_detail": job.job_detail} for job in jobs]
 
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "あなたは経験豊富な履歴書解析アシスタントです。"},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=500,
+    )
 
-def prepare_recommendation_data(employee_data: Dict[str, Any], top_jobs: List[Dict[str, Any]], employee_vector: List[float]) -> Dict[str, Any]:
+    extracted_info = response.choices[0].message.content.strip()
+
+    info_dict = {}
+    for line in extracted_info.split('\n'):
+        if ':' in line:
+            key, value = line.split(':', 1)
+            info_dict[key.strip().lower().replace(' ', '_')] = value.strip()
+
+    return info_dict
+
+async def process_resume_file(contents: bytes) -> Dict[str, Any]:
+    text = extract_text_from_pdf(contents)
+    return process_resume(text)
+
+def process_resume(text: str) -> Dict[str, Any]:
+    prompt = f"""
+    以下職務経歴書の内容を詳細に分析し、候補者の職務経歴と強みについて、以下のカテゴリーに分けて日本語で説明してください：
+
+    1. 専門的スキル：職種や業界に特化した技術的なスキルや知識
+    2. 一般的スキル：様々な職種や状況で活用できる汎用的なスキルや能力
+    3. 主な職務内容：これまでの経歴における主要な責任と成果
+    4. 強み：候補者の際立った特徴や、他の候補者と差別化できる点
+
+    それぞれのカテゴリーについて、具体的な例や状況を挙げて詳しく説明してください。
+
+    職務経歴書:
+    {text}
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "あなたは経験豊富なキャリアコンサルタントです。書類を詳細に分析し、候補者の強みを的確に言語化することができます。"},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=2000,
+    )
+
+    analysis = response.choices[0].message.content.strip()
+    embedding = get_embedding(analysis, model='text-embedding-3-large')
+
     return {
-        "employee_info": {
-            "name": employee_data['employee_info']['name'],
-            "skills": [skill['skill_name'] for skill in employee_data['skills']],
-            "academic_background": employee_data['employee_info']['academic_background'],
-            "recruitment_type": employee_data['employee_info']['recruitment_type']
-        },
-        "employee_vector": employee_vector,  # これは既にOpenAI Embeddingベクトル
-        "top_jobs": [
-            {
-                "job_post_id": job['job_post_id'],
-                "job_title": job['job_title'],
-                "job_detail": job['job_detail']
-            } for job in top_jobs
-        ]
+        "analysis": analysis,
+        "vector": embedding
     }
 
-def generate_recommendations(prepared_data: Dict[str, Any]) -> str:
-    prompt = f"""Analyze the provided employee vector and job information to suggest the 3 most suitable job matches. For each match, provide specific and detailed reasons focusing on the employee's strengths and how they align with the job requirements.
+async def process_bigfive_file(contents: bytes) -> Dict[str, Any]:
+    text = extract_text_from_pdf(contents)
+    return process_bigfive(text)
 
-    Employee Vector: {json.dumps(prepared_data['employee_vector'])}
-    Job Information: {json.dumps(prepared_data['top_jobs'])}
+# Example of how to use this in your process_bigfive function
+def process_bigfive(text: str) -> Dict[str, Any]:
 
-    Consider both skills and personality traits in your analysis. When discussing personality, focus on strengths and how they contribute to job success. Use concrete examples and scenarios to illustrate how the employee's qualities would be valuable in each role.
+    prompt = f"""
+    以下のBigFive性格検査の結果を詳細に分析し、その人の性格特性から読み取ることのできる以下の点について、日本語で具体的に説明してください：
 
-    Provide your answer in Japanese, using natural, professional language appropriate for a business setting. Your response should paint a vivid picture of how the employee would excel in each role. Use the following format as a guide, but express the information in a conversational, engaging manner:
+    1. その人固有の強み
+    2. その人らしさ
+    3. 行動特性
+    4. 価値観
+    5. キャリア適性
+    6. チーム内での役割
 
-    1. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
-       マッチング理由：
-       ・[具体的なスキルや経験を挙げ、それらがどのように職務で活かされるか、具体的な業務シーンを想像して説明]
-       ・[性格や行動特性の強みを挙げ、それらが職場環境や職務遂行にどのように貢献するか、具体的な例を用いて説明]
+    それぞれの項目について、できるだけ具体的な例や状況を挙げて説明してください。また、ビジネス場面での活用方法や自己成長のためのアドバイスも含めてください。
 
-    2. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
-       マッチング理由：
-       ・[スキル面での具体的な説明]
-       ・[性格面での具体的な説明]
-
-    3. 推奨求人：[求人タイトル]（求人ID: [ID番号]）
-       マッチング理由：
-       ・[スキル面での具体的な説明]
-       ・[性格面での具体的な説明]
-
-    各推奨求人について、この方の活躍が即座にイメージできるような具体的な推論を用いて説明してください。その方の強みやスキルがどのように職務に貢献するか、どのような場面で特に力を発揮するかなど、具体的なシナリオを交えて説明することで、読み手がその人物の適性を明確にイメージできるようにしてください。"""
-
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "あなたは優秀な人材マッチングの専門家です。従業員の特性と求人の要件を詳細に分析し、最適なマッチングを提案します。ビジネスの場で使用される自然な日本語で、具体的かつ臨場感のある推薦を行ってください。"},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=2000
-        )
-        return completion.choices[0].message.content
-    except Exception as e:
-        return f"Error in API call: {str(e)}"
-  
-def get_all_employee_data(session: Session, employee: Employee) -> Optional[Dict[str, Any]]:
-    try:
-        return {
-            "employee_info": {
-                "id": employee.employee_id,
-                "name": employee.name,
-                "birthdate": str(employee.birthdate),
-                "gender": employee.gender,
-                "academic_background": employee.academic_background,
-                "hire_date": str(employee.hire_date),
-                "recruitment_type": employee.recruitment_type
-            },
-            "grades": [{"grade_id": g.grade, "grade_name": g.grade_info.grade_name} for g in employee.grades],
-            "skills": [{"skill_id": s.skill_id, "skill_name": s.skill.skill_name, "skill_category": s.skill.skill_category} for s in employee.skills],
-            "spi": employee.spi.__dict__ if employee.spi else None,
-            "evaluations": [{"year": e.evaluation_year, "evaluation": e.evaluation, "comment": e.evaluation_comment} for e in employee.evaluations],
-            "departments": [{"department_id": d.department_id, "department_name": d.department.department_name} for d in employee.departments]
-        }
-    except Exception as e:
-        print(f"Error retrieving employee data: {e}")
-        return None
-
-def get_all_job_posts(session: Session) -> List[JobPost]:
+    BigFive性格検査結果:
+    {text}
     """
-    全ての求人情報を取得する
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "あなたは経験豊富な人事コンサルタントです。BigFive性格検査の結果から人物の特徴を深く洞察し、キャリア開発やチーム編成に活用できる情報を提供することができます。"},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=2000,
+    )
+
+    analysis = response.choices[0].message.content.strip()
+    embedding = get_embedding(analysis, model='text-embedding-3-large')
+
+    return {
+        "detailed_analysis": analysis,
+        "vector": embedding
+    }
+
+
+def update_employee_career(db: Session, employee: Employee, career_info: str):
+    employee.career_info_detail = career_info
+    employee.career_info_processed = False
+    db.commit()
+    db.refresh(employee)
+    return employee
+
+async def process_career_info(employee_id: str, career_info: str):
+    db = SessionLocal()
+    try:
+        employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+        if employee:
+            career_info_embedding = await get_embedding_async(career_info)
+            employee.career_info_vector = json.dumps(career_info_embedding)
+            employee.career_info_processed = True
+            db.commit()
+    finally:
+        db.close()
+
+async def process_personality(db: Session, employee_id: str, personality_data: str):
+    employee = db.query(Employee).filter(Employee.employee_id == employee_id).first()
+    if not employee:
+        raise ValueError(f"Employee with id {employee_id} not found")
     
-    :param session: データベースセッション
-    :return: JobPostオブジェクトのリスト
-    """
+    personality_embedding = await get_embedding_async(personality_data)
+    employee.personality_vector = json.dumps(personality_embedding)
+    db.commit()
+    db.refresh(employee)
+    return employee
+
+async def get_embedding_async(text: str, model: str = "text-embedding-3-large") -> list[float]:
+    text = text.replace("\n", " ")
+    response = await client.embeddings.create(input=[text], model=model)
+    return response.data[0].embedding
+
+
+def create_employee_id(db: Session):
+    last_employee = db.query(Employee).order_by(Employee.employee_id.desc()).first()
+    if last_employee:
+        last_id = int(last_employee.employee_id[7:])
+        new_id = f"SAPPORO{str(last_id + 1).zfill(4)}"
+    else:
+        new_id = "SAPPORO0001"
+    return new_id
+
+def save_employee_data(db: Session, employee: EmployeeCreate, picture: Optional[bytes] = None):
     try:
-        return session.query(JobPost).all()
+        new_employee_id = create_employee_id(db)
+        
+        new_employee = Employee(
+            employee_id=new_employee_id,
+            employee_name=employee.employee_name,
+            birthdate=datetime.datetime.strptime(employee.birthdate, "%Y-%m-%d").date(),
+            gender=employee.gender,
+            academic_background=employee.academic_background,
+            hire_date=employee.hire_date,
+            recruitment_type=employee.recruitment_type,
+            career_info_detail=employee.career_info_detail,
+            career_info_vector=json.dumps(career_info_vector),
+            personality_detail=employee.personality_detail,
+            personality_vector=json.dumps(personality_vector),
+            neuroticism_score=employee.neuroticism_score,          # 神経症傾向スコア
+            extraversion_score=employee.extraversion_score,        # 外向性スコア
+            openness_score=employee.openness_score,               # 経験への開放性スコア
+            agreeableness_score=employee.agreeableness_score,      # 協調性スコア
+            conscientiousness_score=employee.conscientiousness_score, # 誠実性スコア
+            bigfive_scores=json.dumps(employee.bigfive_scores)
+        )
+        
+        if picture:
+            new_employee.picture = picture  # 画像データを保存
+
+        db.add(new_employee)
+        db.flush()
+        
+        grade = db.query(Grade).filter(Grade.grade_name == employee.grade_name).first()
+        if grade:
+            employee_grade = EmployeeGrade(employee_id=new_employee.employee_id, grade_id=grade.grade_id)
+            db.add(employee_grade)
+        
+        department = db.query(Department).filter(Department.department_name == employee.department_name).first()
+        if department:
+            department_member = DepartmentMember(employee_id=new_employee.employee_id, department_id=department.department_id)
+            db.add(department_member)
+        
+        db.commit()
+        db.refresh(new_employee)
+        
+        return new_employee
+    
     except Exception as e:
-        print(f"Error retrieving job posts: {e}")
-        return []
+        db.rollback()  # データベース操作でエラーが発生した場合にロールバック
+        raise HTTPException(status_code=400, detail=f"Error saving employee data: {str(e)}")
+
+def get_grades(db: Session):
+    return db.query(Grade).all()
+
+def get_departments(db: Session):
+    return db.query(Department).all()
+
+def get_employees(db: Session):
+    return db.query(Employee).all()
+
+def get_employee_by_id(db: Session, employee_id: str):
+    return db.query(Employee).filter(Employee.employee_id == employee_id).first()
+
+def get_embedding(text: str, model="text-embedding-3-small"):
+    text = text.replace("\n", " ")
+    return client.embeddings.create(input=[text], model=model).data[0].embedding

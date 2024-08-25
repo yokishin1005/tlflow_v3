@@ -1,120 +1,76 @@
-# /Users/takuya/Documents/talent-flow1.1/fastapi-backend/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Date  # Date を追加
+from sqlalchemy import Column, Integer, String, Date, LargeBinary, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 
-class Employee(Base):
-    __tablename__ = 'employee'
-    employee_id = Column(Integer, primary_key=True)
-    name = Column(String)
-    password = Column(String)
-    birthdate = Column(Date)
-    gender = Column(String)
-    academic_background = Column(String)
-    hire_date = Column(Date)
-    recruitment_type = Column(String)
-    grades = relationship('EmployeeGrade', back_populates='employee')
-    skills = relationship('EmployeeSkill', back_populates='employee')
-    spi = relationship('Spi', back_populates='employee', uselist=False)
-    evaluations = relationship('EvaluationHistory', back_populates='employee')
-    departments = relationship('DepartmentMember', back_populates='employee')
-    
-    vector = relationship("EmployeeVector", back_populates="employee", uselist=False)
-    
-    
-class EmployeeVector(Base):
-    __tablename__ = "employee_vectors"
+class Grade(Base):
+    __tablename__ = "grade"
 
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("employee.employee_id"), unique=True)
-    vector = Column(String)  # JSON文字列として保存
+    grade_id = Column(Integer, primary_key=True, index=True)
+    grade_name = Column(String, nullable=False)
 
-    employee = relationship("Employee", back_populates="vector")
+    employees = relationship("EmployeeGrade", back_populates="grade")
 
 class EmployeeGrade(Base):
-    __tablename__ = 'employee_grade'
-    employee_id = Column(Integer, ForeignKey('employee.employee_id'), primary_key=True)
-    grade = Column(Integer, ForeignKey('grade.grade_id'))
-    employee = relationship('Employee', back_populates='grades')
-    grade_info = relationship('Grade', back_populates='employees')
+    __tablename__ = "employee_grade"
 
-class Grade(Base):
-    __tablename__ = 'grade'
-    grade_id = Column(Integer, primary_key=True)
-    grade_name = Column(String)
-    employees = relationship('EmployeeGrade', back_populates='grade_info')
+    employeegrade_id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(String, ForeignKey("employee.employee_id"), nullable=False)
+    grade_id = Column(Integer, ForeignKey("grade.grade_id"), nullable=False)
 
-class EmployeeSkill(Base):
-    __tablename__ = 'employee_skill'
-    employee_skill_id = Column(Integer, primary_key=True)
-    employee_id = Column(Integer, ForeignKey('employee.employee_id'))
-    skill_id = Column(Integer, ForeignKey('skill_list.skill_id'))
-    employee = relationship('Employee', back_populates='skills')
-    skill = relationship('SkillList', back_populates='employees')
+    employee = relationship("Employee", back_populates="grades")
+    grade = relationship("Grade", back_populates="employees")
 
-class SkillList(Base):
-    __tablename__ = 'skill_list'
-    skill_id = Column(Integer, primary_key=True)
-    skill_category = Column(String)
-    skill_name = Column(String)
-    employees = relationship('EmployeeSkill', back_populates='skill')
+class Employee(Base):
+    __tablename__ = 'employee'
 
-class Spi(Base):
-    __tablename__ = 'spi'
-    spi_id = Column(Integer, primary_key=True)
-    employee_id = Column(Integer, ForeignKey('employee.employee_id'))
-    extraversion = Column(Integer)
-    agreebleness = Column(Integer)
-    conscientiousness = Column(Integer)
-    neuroticism = Column(Integer)
-    openness = Column(Integer)
-    employee = relationship('Employee', back_populates='spi')
+    employee_id = Column(String, primary_key=True)
+    employee_name = Column(String, nullable=False)
+    birthdate = Column(Date, nullable=False)
+    gender = Column(String, nullable=False)
+    academic_background = Column(String, nullable=False)
+    hire_date = Column(Date, nullable=False)
+    recruitment_type = Column(String, nullable=False)
+    picture = Column(LargeBinary)
+    career_info_detail = Column(String, nullable=False)
+    career_info_vector = Column(JSON, nullable=False)
+    personality_detail = Column(String, nullable=False)
+    personality_vector = Column(JSON, nullable=False)
+    neuroticism_score = Column(Integer, nullable=False)   # 神経症傾向スコア
+    extraversion_score = Column(Integer, nullable=False)  # 外向性スコア
+    openness_score = Column(Integer, nullable=False)      # 経験への開放性スコア
+    agreeableness_score = Column(Integer, nullable=False) # 協調性スコア
+    conscientiousness_score = Column(Integer, nullable=False) # 誠実性スコア
+    password_hash = Column(String, nullable=False) 
 
-class EvaluationHistory(Base):
-    __tablename__ = 'evaluation_history'
-    evaluation_id = Column(Integer, primary_key=True)
-    employee_id = Column(Integer, ForeignKey('employee.employee_id'))
-    evaluation_year = Column(Integer)
-    evaluation = Column(String)
-    evaluation_comment = Column(String)
-    employee = relationship('Employee', back_populates='evaluations')
-
-class DepartmentMember(Base):
-    __tablename__ = 'department_member'
-    department_member_id = Column(Integer, primary_key=True)
-    department_id = Column(Integer, ForeignKey('department.department_id'))
-    employee_id = Column(Integer, ForeignKey('employee.employee_id'))
-    employee = relationship('Employee', back_populates='departments')
-    department = relationship('Department', back_populates='members')
+    grades = relationship("EmployeeGrade", back_populates="employee")
+    departments = relationship("DepartmentMember", back_populates="employee")
 
 class Department(Base):
-    __tablename__ = 'department'
-    department_id = Column(Integer, primary_key=True)
-    department_name = Column(String)
-    department_detail = Column(String)
-    members = relationship('DepartmentMember', back_populates='department')
+    __tablename__ = "department"
+
+    department_id = Column(Integer, primary_key=True, index=True)
+    department_name = Column(String, nullable=False)
+    department_detail = Column(String, nullable=False)
+
+    employees = relationship("DepartmentMember", back_populates="department")
+    job_posts = relationship("JobPost", back_populates="department")
+
+class DepartmentMember(Base):
+    __tablename__ = "department_member"
+
+    departmentmember_id = Column(Integer, primary_key=True, index=True)
+    department_id = Column(Integer, ForeignKey("department.department_id"), nullable=False)
+    employee_id = Column(String, ForeignKey("employee.employee_id"), nullable=False)
+
+    department = relationship("Department", back_populates="employees")
+    employee = relationship("Employee", back_populates="departments")
 
 class JobPost(Base):
-    __tablename__ = 'job_post'
-    job_post_id = Column(Integer, primary_key=True)
-    department_id = Column(Integer, ForeignKey('department.department_id'))
-    job_title = Column(String)
-    job_detail = Column(String)
-    department = relationship('Department')
-    
-    vector = relationship("JobPostVector", back_populates="job_post", uselist=False)
-    
-class RequiredSkill(Base):
-    __tablename__ = 'required_skill'
+    __tablename__ = "job_post"
 
-    required_id = Column(Integer, primary_key=True, autoincrement=True)
-    job_post_id = Column(Integer, ForeignKey('job_post.job_post_id'), nullable=False)
-    skill_id = Column(Integer, ForeignKey('skill_list.skill_id'), nullable=False)
+    jobpost_id = Column(Integer, primary_key=True, index=True)
+    department_id = Column(Integer, ForeignKey("department.department_id"), nullable=False)
+    job_detail = Column(String, nullable=False)
+    job_detail_vector = Column(JSON, nullable=False)
 
-class JobPostVector(Base):
-    __tablename__ = "job_post_vectors"
-
-    id = Column(Integer, primary_key=True, index=True)
-    job_post_id = Column(Integer, ForeignKey("job_post.job_post_id"), unique=True)
-    vector = Column(String)  # JSON文字列として保存
-    job_post = relationship("JobPost", back_populates="vector")
+    department = relationship("Department", back_populates="job_posts")

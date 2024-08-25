@@ -19,44 +19,32 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
-*.manifest
-*.spec
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Virtual environment
-.venv/
-env/
-ENV/
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask
-instance/
-.webassets-cache
-
-# FastAPI
-.env
 
 # Node
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+npm-debug.log
+yarn-error.log
 
 # Next.js
 .next/
 out/
 
-# Database
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# SQLite database
 *.db
-*.sqlite
 *.sqlite3
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # OS generated files
 .DS_Store
@@ -67,31 +55,43 @@ out/
 ehthumbs.db
 Thumbs.db
 
-# IDEs and editors
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Large media files
-*.mp4
-*.tiff
-*.avi
-*.flv
-*.mov
-*.wmv
-
-# Logs and databases
+# Logs
+logs
 *.log
-*.sql
-*.sqlite
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Other
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Coverage directory used by tools like istanbul
+coverage
 
-# Project specific
-myp.db
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Bower dependency directory (https://bower.io/)
+bower_components
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# Temporary folders
+tmp/
+temp/
