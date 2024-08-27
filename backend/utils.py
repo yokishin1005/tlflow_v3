@@ -8,7 +8,7 @@ from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
 from sqlalchemy.orm import Session
 import datetime
-from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember, JobPost
+from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember, JobPost, EmployeeJobAssignment
 from schemas import EmployeeCreate, EmployeeResponse
 import logging
 import bcrypt
@@ -21,13 +21,11 @@ def hash_password(password: str) -> str:
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
-
 def extract_text_from_pdf(contents: bytes) -> str:
     output_string = BytesIO()
     laparams = LAParams()
     extract_text_to_fp(BytesIO(contents), output_string, laparams=laparams)
     return output_string.getvalue().decode()
-
 
 async def process_resume_file(file: UploadFile) -> Dict[str, Any]:
     contents = await file.read()
@@ -163,18 +161,27 @@ def save_employee_data(db: Session, employee: EmployeeCreate, career_info_detail
         db.add(new_employee)
         db.flush()
 
+        # Create EmployeeGrade entry
         employee_grade = EmployeeGrade(
             employee_id=new_employee_id,
             grade_id=employee.grade_id
         )
         db.add(employee_grade)
 
+        # Create DepartmentMember entry
         department_member = DepartmentMember(
             employee_id=new_employee_id,
             department_id=employee.department_id
         )
         db.add(department_member)
-        
+
+        # Create EmployeeJobAssignment entry
+        job_assignment = EmployeeJobAssignment(
+            employee_id=new_employee_id,
+            jobpost_id=employee.job_post_id,
+            start_date=employee.hire_date  # Set start_date as hire_date
+        )
+        db.add(job_assignment)
 
         db.commit()
         return new_employee
@@ -183,6 +190,7 @@ def save_employee_data(db: Session, employee: EmployeeCreate, career_info_detail
         db.rollback()
         logging.exception("Unexpected error occurred while saving employee data")
         raise HTTPException(status_code=500, detail="Error saving employee data")
+
 
 def create_employee_response(employee: Employee, db: Session) -> EmployeeResponse:
     grade = db.query(Grade).join(EmployeeGrade).filter(EmployeeGrade.employee_id == employee.employee_id).first()

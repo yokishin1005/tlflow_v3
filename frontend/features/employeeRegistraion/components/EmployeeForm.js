@@ -8,6 +8,7 @@ import FormLayout from './FormLayout';
 import FormFields from './FormFields';
 import useEmployeeForm from './useEmployeeForm';
 import { employeeSchema } from './validationSchema';
+import { registerEmployee } from '../../../utils/api';
 
 export default function EmployeeForm({ onSubmit }) {
   const methods = useForm({
@@ -43,8 +44,9 @@ export default function EmployeeForm({ onSubmit }) {
   } = useEmployeeForm(onSubmit);
 
   const onSubmitForm = async (data) => {
+    console.log("Form Data:", data);  // Debugging step
     try {
-      await processForm(data);
+      await registerEmployee(data);
       toast.success('従業員情報が正常に登録されました。');
     } catch (error) {
       console.error('Error submitting form:', error);

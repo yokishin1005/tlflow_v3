@@ -72,7 +72,10 @@ async def register_employee(
     except Exception as e:
         logging.exception("Unexpected error occurred while registering employee")
         raise HTTPException(status_code=500, detail="Error registering employee")
-
+    
+@app.post("/process_resume/", response_model=dict)
+async def process_resume_endpoint(file: UploadFile):
+    return await utils.process_resume_file(file)
 
 @app.post("/process_bigfive/", response_model=dict)
 async def process_bigfive_endpoint(file: UploadFile = File(...)):

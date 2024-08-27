@@ -30,6 +30,7 @@ export async function getDepartments() {
 export async function getJobPostsByDepartment(departmentId) {
   return fetchWithErrorHandling(`${API_URL}/departments/${departmentId}/jobposts/`);
 }
+
 export async function registerEmployee(employeeData) {
   const formData = new FormData();
   
@@ -48,8 +49,6 @@ export async function registerEmployee(employeeData) {
     body: formData,
   });
 }
-
-
 
 export async function processResume(file) {
   const formData = new FormData();

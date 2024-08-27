@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
-import DatePicker from 'react-datepicker';
+import BirthdayPicker from '../../../common/components/BirthdayPicker'
 import "react-datepicker/dist/react-datepicker.css";
 import InputField from '../../../common/components/InputField';
 import SelectField from '../../../common/components/SelectField';
 import FileUpload from '../../../common/components/FileUpload';
 import { getDepartments, getJobPostsByDepartment } from '../../../utils/api';
+import HiredatePicker from '../../../common/components/HiredatePicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const FormFields = ({
   grades,
@@ -67,18 +69,11 @@ const FormFields = ({
           name="birthdate"
           control={control}
           render={({ field }) => (
-            <div>
-              <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700">
-                生年月日
-              </label>
-              <DatePicker
-                selected={field.value}
-                onChange={(date) => field.onChange(date)}
-                dateFormat="yyyy/MM/dd"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-              {errors.birthdate && <p className="mt-2 text-sm text-red-600">{errors.birthdate.message}</p>}
-            </div>
+            <BirthdayPicker
+              value={field.value}
+              onChange={(date) => field.onChange(date)}
+              error={errors.birthdate?.message}
+            />
           )}
         />
 
@@ -116,18 +111,11 @@ const FormFields = ({
           name="hire_date"
           control={control}
           render={({ field }) => (
-            <div>
-              <label htmlFor="hire_date" className="block text-sm font-medium text-gray-700">
-                入社日
-              </label>
-              <DatePicker
-                selected={field.value}
-                onChange={(date) => field.onChange(date)}
-                dateFormat="yyyy/MM/dd"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              />
-              {errors.hire_date && <p className="mt-2 text-sm text-red-600">{errors.hire_date.message}</p>}
-            </div>
+            <HiredatePicker
+              value={field.value}
+              onChange={(date) => field.onChange(date)}
+              error={errors.hire_date?.message}
+            />
           )}
         />
 
@@ -196,7 +184,7 @@ const FormFields = ({
               options={[
                 { value: "", label: "選択してください" },
                 ...jobPosts.map((jobPost) => ({
-                  value: jobPost.job_title,
+                  value: jobPost.job_title,  // Ensure job_title is selected
                   label: jobPost.job_title,
                 }))
               ]}
