@@ -1,19 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import InputField from '../../../common/components/InputField';
 import SelectField from '../../../common/components/SelectField';
 import FileUpload from '../../../common/components/FileUpload';
+import { getDepartments, getJobPostsByDepartment } from '../../../utils/api';
 
 const FormFields = ({
   grades,
-  departments,
-  jobPosts,
   fileStatus,
   onDrop
 }) => {
-  const { control, formState: { errors } } = useFormContext();
+  const { control, formState: { errors }, watch, setValue } = useFormContext();
+  const [departments, setDepartments] = useState([]);
+  const [jobPosts, setJobPosts] = useState([]);
+
+  const selectedDepartmentId = watch('department_id');
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const fetchedDepartments = await getDepartments();
+        setDepartments(fetchedDepartments);
+      } catch (error) {
+        console.error('Failed to fetch departments:', error);
+        // ここでエラー処理を行う（例：トースト通知を表示する）
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
+    const fetchJobPosts = async () => {
+      if (selectedDepartmentId) {
+        try {
+          const fetchedJobPosts = await getJobPostsByDepartment(selectedDepartmentId);
+          setJobPosts(fetchedJobPosts);
+        } catch (error) {
+          console.error('Failed to fetch job posts:', error);
+          // ここでエラー処理を行う（例：トースト通知を表示する）
+        }
+      } else {
+        setJobPosts([]);
+      }
+    };
+    fetchJobPosts();
+  }, [selectedDepartmentId]);
 
   return (
     <div className="space-y-8">
@@ -135,7 +168,7 @@ const FormFields = ({
         />
 
         <Controller
-          name="department_name"
+          name="department_id"
           control={control}
           render={({ field }) => (
             <SelectField
@@ -144,11 +177,11 @@ const FormFields = ({
               options={[
                 { value: "", label: "選択してください" },
                 ...departments.map((department) => ({
-                  value: department.department_name,
+                  value: department.department_id,
                   label: department.department_name,
                 })),
               ]}
-              error={errors.department_name?.message}
+              error={errors.department_id?.message}
             />
           )}
         />
@@ -162,12 +195,13 @@ const FormFields = ({
               {...field}
               options={[
                 { value: "", label: "選択してください" },
-                ...(jobPosts ? jobPosts.map((jobPost) => ({
+                ...jobPosts.map((jobPost) => ({
                   value: jobPost.job_title,
                   label: jobPost.job_title,
-                })) : [])
+                }))
               ]}
               error={errors.job_title?.message}
+              disabled={!selectedDepartmentId}
             />
           )}
         />

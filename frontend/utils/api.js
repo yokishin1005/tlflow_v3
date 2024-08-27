@@ -27,10 +27,9 @@ export async function getDepartments() {
   return fetchWithErrorHandling(`${API_URL}/departments/`);
 }
 
-export async function getJobPosts() {
-  return fetchWithErrorHandling(`${API_URL}/jobposts/`);
+export async function getJobPostsByDepartment(departmentId) {
+  return fetchWithErrorHandling(`${API_URL}/departments/${departmentId}/jobposts/`);
 }
-
 export async function registerEmployee(employeeData) {
   const formData = new FormData();
   

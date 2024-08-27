@@ -107,6 +107,13 @@ async def get_departments(db: Session = Depends(get_db)):
 async def get_jobposts(db: Session = Depends(get_db)):
     return utils.get_jobposts(db)
 
+@app.get("/departments/{department_id}/jobposts/", response_model=List[schemas.JobPostResponse])
+async def get_jobposts_by_department(department_id: int, db: Session = Depends(get_db)):
+    jobposts = utils.get_jobposts_by_department(db, department_id)
+    if not jobposts:
+        raise HTTPException(status_code=404, detail="No job posts found for this department")
+    return jobposts
+
 @app.get("/employees/", response_model=List[schemas.EmployeeResponse])
 async def get_employees(db: Session = Depends(get_db)):
     return utils.get_employees(db)

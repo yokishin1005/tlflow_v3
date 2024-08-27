@@ -253,14 +253,17 @@ def create_employee_response(employee: Employee, db: Session) -> EmployeeRespons
         picture=picture_base64
     )
 
-def get_grades(db: Session):
-    return db.query(Grade).all()
-
 def get_departments(db: Session):
     return db.query(Department).all()
 
+def get_grades(db: Session):
+    return db.query(Grade).all()
+
 def get_jobposts(db: Session):
     return db.query(JobPost).all()
+
+def get_jobposts_by_department(db: Session, department_id: int):
+    return db.query(JobPost).filter(JobPost.department_id == department_id).all()
 
 def get_employees(db: Session):
     return db.query(Employee).all()
