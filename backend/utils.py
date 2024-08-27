@@ -8,7 +8,7 @@ from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
 from sqlalchemy.orm import Session
 import datetime
-from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember
+from models import Employee, EmployeeGrade, Grade, Department, DepartmentMember, JobPost
 from schemas import EmployeeCreate, EmployeeResponse
 import logging
 import bcrypt
@@ -258,6 +258,9 @@ def get_grades(db: Session):
 
 def get_departments(db: Session):
     return db.query(Department).all()
+
+def get_jobposts(db: Session):
+    return db.query(JobPost).all()
 
 def get_employees(db: Session):
     return db.query(Employee).all()

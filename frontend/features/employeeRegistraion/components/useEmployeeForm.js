@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGrades, getDepartments, processRirekisho, processResume, processBigFive } from '../../../utils/api';
+import { getGrades, getDepartments, processRirekisho, processResume, processBigFive, getJobPosts} from '../../../utils/api';
 import { useDropzone } from 'react-dropzone';
 
 // Zodスキーマの定義
@@ -17,8 +17,10 @@ const schema = z.object({
   recruitment_type: z.string().min(1, { message: "採用区分を選択してください" }),
   grade_name: z.string().min(1, { message: "等級を選択してください" }),
   department_name: z.string().min(1, { message: "部門を選択してください" }),
+  job_title: z.string().min(1, { message: "ポジションを選択してください" }),
   password: z.string().min(8, { message: "パスワードは8文字以上である必要があります" }),
 });
+
 
 const useEmployeeForm = (onSubmit) => {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
@@ -30,6 +32,7 @@ const useEmployeeForm = (onSubmit) => {
 
   const [grades, setGrades] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [jobPosts, setJobPosts] = useState([]); // jobposts を jobPosts に変更
   const [fileStatus, setFileStatus] = useState({
     rirekisho: { status: '未アップロード', data: null },
     resume: { status: '未アップロード', data: null },
@@ -40,12 +43,14 @@ const useEmployeeForm = (onSubmit) => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [gradesData, departmentsData] = await Promise.all([
+        const [gradesData, departmentsData, jobPostsData] = await Promise.all([
           getGrades(),
-          getDepartments()
+          getDepartments(),
+          getJobPosts()
         ]);
         setGrades(gradesData);
         setDepartments(departmentsData);
+        setJobPosts(jobPostsData); // jobPostsData をセット
       } catch (error) {
         console.error('データの取得に失敗しました。', error);
         toast.error('データの取得に失敗しました。');
@@ -130,6 +135,7 @@ const useEmployeeForm = (onSubmit) => {
     setValue,
     grades,
     departments,
+    jobPosts,
     fileStatus,
     onDrop,
     getRootProps,

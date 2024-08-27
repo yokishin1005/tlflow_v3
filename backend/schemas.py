@@ -94,3 +94,13 @@ class DepartmentResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        
+class JobPostResponse(BaseModel):
+    jobpost_id: int
+    department_id: int
+    job_title: str
+
+    class Config:
+        orm_mode = True
+
+    

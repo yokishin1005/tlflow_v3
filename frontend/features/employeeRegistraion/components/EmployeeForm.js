@@ -21,6 +21,7 @@ export default function EmployeeForm({ onSubmit }) {
       recruitment_type: '',
       grade_name: '',
       department_name: '',
+      job_title:'',
       neuroticism_score: '',
       extraversion_score: '',
       openness_score: '',
@@ -36,6 +37,7 @@ export default function EmployeeForm({ onSubmit }) {
     grades,
     departments,
     fileStatus,
+    jobPosts,
     onDrop,
     processForm
   } = useEmployeeForm(onSubmit);
@@ -58,6 +60,7 @@ export default function EmployeeForm({ onSubmit }) {
             <FormFields
               grades={grades}
               departments={departments}
+              jobPosts={jobPosts}
               fileStatus={fileStatus}
               onDrop={onDrop}
             />

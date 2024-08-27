@@ -9,6 +9,7 @@ import FileUpload from '../../../common/components/FileUpload';
 const FormFields = ({
   grades,
   departments,
+  jobPosts,
   fileStatus,
   onDrop
 }) => {
@@ -148,6 +149,25 @@ const FormFields = ({
                 })),
               ]}
               error={errors.department_name?.message}
+            />
+          )}
+        />
+
+        <Controller
+          name="job_title"
+          control={control}
+          render={({ field }) => (
+            <SelectField
+              label="ポジション"
+              {...field}
+              options={[
+                { value: "", label: "選択してください" },
+                ...(jobPosts ? jobPosts.map((jobPost) => ({
+                  value: jobPost.job_title,
+                  label: jobPost.job_title,
+                })) : [])
+              ]}
+              error={errors.job_title?.message}
             />
           )}
         />

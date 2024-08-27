@@ -9,6 +9,7 @@ import logging
 from fastapi.exceptions import RequestValidationError
 from datetime import datetime
 import base64
+import uvicorn
 
 models.Base.metadata.create_all(bind=engine)
 logging.basicConfig(level=logging.INFO)
@@ -102,6 +103,10 @@ async def get_grades(db: Session = Depends(get_db)):
 async def get_departments(db: Session = Depends(get_db)):
     return utils.get_departments(db)
 
+@app.get("/jobposts/", response_model=List[schemas.JobPostResponse])
+async def get_jobposts(db: Session = Depends(get_db)):
+    return utils.get_jobposts(db)
+
 @app.get("/employees/", response_model=List[schemas.EmployeeResponse])
 async def get_employees(db: Session = Depends(get_db)):
     return utils.get_employees(db)
@@ -114,5 +119,4 @@ async def get_employee(employee_id: str, db: Session = Depends(get_db)):
     return utils.create_employee_response(employee, db)
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

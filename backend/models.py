@@ -67,9 +67,9 @@ class DepartmentMember(Base):
 
 class JobPost(Base):
     __tablename__ = "job_post"
-
     jobpost_id = Column(Integer, primary_key=True, index=True)
     department_id = Column(Integer, ForeignKey("department.department_id"), nullable=False)
+    job_title = Column(String, nullable=False)
     job_detail = Column(String, nullable=False)
     job_detail_vector = Column(JSON, nullable=False)
 
