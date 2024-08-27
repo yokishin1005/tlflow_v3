@@ -287,19 +287,6 @@ const FormFields = ({
 
       <div className="space-y-6">
         <FileUpload
-          label="履歴書"
-          fileType="rirekisho"
-          onDrop={onDrop}
-          fileStatus={fileStatus.rirekisho}
-          acceptedFileTypes={{
-            'application/pdf': ['.pdf'],
-            'application/msword': ['.doc'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-            'text/plain': ['.txt']
-          }}
-        />
-
-        <FileUpload
           label="職務経歴書"
           fileType="resume"
           onDrop={onDrop}

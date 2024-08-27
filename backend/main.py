@@ -42,7 +42,6 @@ async def validation_exception_handler(request, exc):
 @app.post("/employees/", response_model=schemas.EmployeeResponse)
 async def register_employee(
     employee_data: schemas.EmployeeCreate = Depends(schemas.EmployeeCreate.as_form),
-    rirekisho: UploadFile = File(None),
     resume: UploadFile = File(None),
     bigfive: UploadFile = File(None),
     picture: UploadFile = File(None),
@@ -50,7 +49,7 @@ async def register_employee(
 ):
     try:
         # ファイル処理
-        career_info_detail, career_info_vector = await utils.process_career_files(rirekisho, resume)
+        career_info_detail, career_info_vector = await utils.process_career_files(resume)
         personality_detail, personality_vector = await utils.process_personality_file(bigfive)
         picture_data = await picture.read() if picture else None
 
@@ -74,19 +73,6 @@ async def register_employee(
         logging.exception("Unexpected error occurred while registering employee")
         raise HTTPException(status_code=500, detail="Error registering employee")
 
-@app.post("/process_rirekisho/", response_model=dict)
-async def process_rirekisho_endpoint(file: UploadFile = File(...)):
-    try:
-        return await utils.process_rirekisho_file(file)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
-
-@app.post("/process_resume/", response_model=dict)
-async def process_resume_endpoint(file: UploadFile = File(...)):
-    try:
-        return await utils.process_resume_file(file)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
 
 @app.post("/process_bigfive/", response_model=dict)
 async def process_bigfive_endpoint(file: UploadFile = File(...)):

@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { getGrades, getDepartments, processRirekisho, processResume, processBigFive, getJobPostsByDepartment } from '../../../utils/api';
+import { getGrades, getDepartments, processResume, processBigFive, getJobPostsByDepartment } from '../../../utils/api';
 import { useDropzone } from 'react-dropzone';
 
 // Zodスキーマの定義
@@ -32,7 +32,6 @@ const useEmployeeForm = (onSubmit) => {
   const [departments, setDepartments] = useState([]);
   const [jobPosts, setJobPosts] = useState([]);
   const [fileStatus, setFileStatus] = useState({
-    rirekisho: { status: '未アップロード', data: null },
     resume: { status: '未アップロード', data: null },
     bigfive: { status: '未アップロード', data: null },
     picture: { status: '未アップロード', data: null },
@@ -78,9 +77,6 @@ const useEmployeeForm = (onSubmit) => {
     try {
       let processedData;
       switch (fileType) {
-        case 'rirekisho':
-          processedData = await processRirekisho(file);
-          break;
         case 'resume':
           processedData = await processResume(file);
           break;
@@ -105,7 +101,7 @@ const useEmployeeForm = (onSubmit) => {
       [fileType]: { status: '処理中', data: null }
     }));
 
-    if (['rirekisho', 'resume', 'bigfive'].includes(fileType)) {
+    if (['resume', 'bigfive'].includes(fileType)) {
       const processedData = await processFile(file, fileType);
       if (processedData) {
         setFileStatus(prevStatus => ({

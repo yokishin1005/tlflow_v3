@@ -21,15 +21,6 @@ def hash_password(password: str) -> str:
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
-async def process_rirekisho_file(file: UploadFile) -> Dict[str, Any]:
-    contents = await file.read()
-    if file.content_type == "application/pdf":
-        text = extract_text_from_pdf(contents)
-    else:
-        encoding = chardet.detect(contents)['encoding'] or 'utf-8'
-        text = contents.decode(encoding)
-
-    return process_rirekisho(text)
 
 def extract_text_from_pdf(contents: bytes) -> str:
     output_string = BytesIO()
@@ -37,37 +28,6 @@ def extract_text_from_pdf(contents: bytes) -> str:
     extract_text_to_fp(BytesIO(contents), output_string, laparams=laparams)
     return output_string.getvalue().decode()
 
-def process_rirekisho(text: str) -> Dict[str, Any]:
-    prompt = f"""
-    以下の履歴書から以下の情報を抽出してください:
-    名前 (Name)
-    生年月日 (Birthdate) (利用可能な場合)
-    性別 (Gender) (利用可能な場合)
-    学歴 (Academic Background)
-    経歴 (Career Information)
-    
-    履歴書:
-    {text}
-    """
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "あなたは経験豊富な履歴書解析アシスタントです。"},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=500,
-    )
-
-    extracted_info = response.choices[0].message.content.strip()
-
-    info_dict = {}
-    for line in extracted_info.split('\n'):
-        if ':' in line:
-            key, value = line.split(':', 1)
-            info_dict[key.strip().lower().replace(' ', '_')] = value.strip()
-
-    return info_dict
 
 async def process_resume_file(file: UploadFile) -> Dict[str, Any]:
     contents = await file.read()
@@ -149,11 +109,9 @@ def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[floa
     text = text.replace("\n", " ")
     return client.embeddings.create(input=[text], model=model).data[0].embedding
 
-async def process_career_files(rirekisho: UploadFile, resume: UploadFile) -> Tuple[str, list[float]]:
-    rirekisho_info = await process_rirekisho_file(rirekisho) if rirekisho else {}
+async def process_career_files(resume: UploadFile) -> Tuple[str, list[float]]:
     resume_info = await process_resume_file(resume) if resume else {}
     
-    career_info_detail = f"履歴書情報: {json.dumps(rirekisho_info, ensure_ascii=False)}\n"
     career_info_detail += f"職務経歴書情報: {resume_info.get('analysis', '')}"
     
     career_info_vector = resume_info.get('vector', [])
@@ -216,6 +174,7 @@ def save_employee_data(db: Session, employee: EmployeeCreate, career_info_detail
             department_id=employee.department_id
         )
         db.add(department_member)
+        
 
         db.commit()
         return new_employee

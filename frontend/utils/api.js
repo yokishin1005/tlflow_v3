@@ -49,14 +49,7 @@ export async function registerEmployee(employeeData) {
   });
 }
 
-export async function processRirekisho(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-  return fetchWithErrorHandling(`${API_URL}/process_rirekisho/`, {
-    method: 'POST',
-    body: formData,
-  });
-}
+
 
 export async function processResume(file) {
   const formData = new FormData();

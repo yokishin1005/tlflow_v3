@@ -44,6 +44,7 @@ class Employee(Base):
 
     grades = relationship("EmployeeGrade", back_populates="employee")
     departments = relationship("DepartmentMember", back_populates="employee")
+    job_assignments = relationship("EmployeeJobAssignment", back_populates="employee")
 
 class Department(Base):
     __tablename__ = "department"
@@ -64,9 +65,22 @@ class DepartmentMember(Base):
 
     department = relationship("Department", back_populates="employees")
     employee = relationship("Employee", back_populates="departments")
+    
+class EmployeeJobAssignment(Base):
+    __tablename__ = "employee_job_assignment"
+
+    assignment_id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(String, ForeignKey("employee.employee_id"), nullable=False)
+    jobpost_id = Column(Integer, ForeignKey("job_post.jobpost_id"), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+
+    employee = relationship("Employee", back_populates="job_assignments")
+    job_post = relationship("JobPost", back_populates="assigned_employees")
 
 class JobPost(Base):
     __tablename__ = "job_post"
+
     jobpost_id = Column(Integer, primary_key=True, index=True)
     department_id = Column(Integer, ForeignKey("department.department_id"), nullable=False)
     job_title = Column(String, nullable=False)
@@ -74,3 +88,4 @@ class JobPost(Base):
     job_detail_vector = Column(JSON, nullable=False)
 
     department = relationship("Department", back_populates="job_posts")
+    assigned_employees = relationship("EmployeeJobAssignment", back_populates="job_post")
