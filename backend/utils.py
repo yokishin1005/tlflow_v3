@@ -130,9 +130,7 @@ def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[floa
 
 async def process_career_files(resume: UploadFile) -> Tuple[str, list[float]]:
     resume_info = await process_resume_file(resume) if resume else {}
-        
     career_info_vector = resume_info.get('vector', [])
-    
     return career_info_vector
 
 async def process_personality_file(bigfive: UploadFile) -> Tuple[str, list[float]]:

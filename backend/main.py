@@ -48,12 +48,20 @@ async def register_employee(
     db: Session = Depends(get_db)
 ):
     try:
-        # ファイル処理
+        # Date parsing (if not handled in EmployeeCreate schema)
+        employee_data.birthdate = datetime.strptime(employee_data.birthdate, "%Y-%m-%d").date()
+        employee_data.hire_date = datetime.strptime(employee_data.hire_date, "%Y-%m-%d").date()
+
+        # File processing
         career_info_detail, career_info_vector = await utils.process_career_files(resume)
         personality_detail, personality_vector = await utils.process_personality_file(bigfive)
         picture_data = await picture.read() if picture else None
 
-        # 新しい社員データを保存
+        # Fetch grade and department information
+        grade = db.query(models.Grade).filter(models.Grade.grade_id == employee_data.grade_id).first()
+        department = db.query(models.Department).filter(models.Department.department_id == employee_data.department_id).first()
+
+        # Save new employee data
         new_employee = utils.save_employee_data(
             db=db,
             employee=employee_data,
@@ -64,14 +72,37 @@ async def register_employee(
             picture=picture_data
         )
 
-        return utils.create_employee_response(new_employee, db)
+        # Prepare response
+        picture_base64 = base64.b64encode(new_employee.picture).decode('utf-8') if new_employee.picture else None
+
+        return schemas.EmployeeResponse(
+            employee_id=new_employee.employee_id,
+            employee_name=new_employee.employee_name,
+            birthdate=new_employee.birthdate,
+            gender=new_employee.gender,
+            academic_background=new_employee.academic_background,
+            hire_date=new_employee.hire_date,
+            recruitment_type=new_employee.recruitment_type,
+            grade_name=grade.grade_name if grade else None,
+            department_name=department.department_name if department else None,
+            neuroticism_score=new_employee.neuroticism_score,
+            extraversion_score=new_employee.extraversion_score,
+            openness_score=new_employee.openness_score,
+            agreeableness_score=new_employee.agreeableness_score,
+            conscientiousness_score=new_employee.conscientiousness_score,
+            career_info_detail=new_employee.career_info_detail,
+            career_info_vector=new_employee.career_info_vector,
+            personality_detail=new_employee.personality_detail,
+            personality_vector=new_employee.personality_vector,
+            picture=picture_base64
+        )
 
     except HTTPException as http_err:
         logging.error(f"HTTP error occurred: {http_err.detail}")
         raise http_err
     except Exception as e:
         logging.exception("Unexpected error occurred while registering employee")
-        raise HTTPException(status_code=500, detail="Error registering employee")
+        raise HTTPException(status_code=500, detail=f"Error registering employee: {str(e)}")
     
 @app.post("/process_resume/", response_model=dict)
 async def process_resume_endpoint(file: UploadFile):
