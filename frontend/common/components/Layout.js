@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -8,17 +8,25 @@ const Layout = ({ children, title = 'Employee Management System' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // UseEffect to handle dark mode toggle to ensure it runs after component mounts
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
-  };
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       <Head>
         <title>{title}</title>
+        {/* Verify that favicon.ico exists in the public directory */}
         <link rel="icon" href="/favicon.ico" />
+        {/* Ensure Google Fonts are loaded correctly */}
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -43,6 +51,7 @@ const Layout = ({ children, title = 'Employee Management System' }) => {
               <button
                 onClick={toggleDarkMode}
                 className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                aria-label="Toggle Dark Mode"
               >
                 {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-gray-500" />}
               </button>
@@ -51,6 +60,7 @@ const Layout = ({ children, title = 'Employee Management System' }) => {
               <button
                 onClick={toggleMenu}
                 className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+                aria-label="Toggle Menu"
               >
                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>

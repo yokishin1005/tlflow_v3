@@ -8,11 +8,6 @@ export default function Home() {
       <nav>
         <ul>
           <li>
-            <Link href="/employees">
-              <a>従業員一覧</a>
-            </Link>
-          </li>
-          <li>
             <Link href="/register">
               <a>新規従業員登録</a>
             </Link>

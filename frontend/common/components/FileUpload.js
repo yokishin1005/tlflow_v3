@@ -4,10 +4,27 @@ import { FiUpload, FiCheck, FiX } from 'react-icons/fi';
 
 const FileUpload = ({ label, fileType, onDrop, fileStatus, acceptedFileTypes }) => {
   const { getRootProps, getInputProps } = useDropzone({
-    onDrop: files => onDrop(files, fileType),
-    accept: acceptedFileTypes,
+    onDrop: (files) => handleDrop(files, fileType),
+    accept: acceptedFileTypes[fileType],
     maxFiles: 1
   });
+
+  const handleDrop = (files, fileType) => {
+    if (files.length === 0) {
+      console.error('無効なファイルがアップロードされました');
+      return;
+    }
+
+    const file = files[0];
+    const validFileTypes = acceptedFileTypes[fileType];
+
+    if (!validFileTypes.includes(file.type)) {
+      console.error(`無効なファイルタイプが選択されました: ${file.type}`);
+      return;
+    }
+
+    onDrop(files, fileType);
+  };
 
   return (
     <div className="mb-4">

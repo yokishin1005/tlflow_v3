@@ -44,6 +44,9 @@ export const employeeSchema = z.object({
   department_name: z.string()
     .min(1, { message: '部署を選択してください' }),
 
+    job_title: z.string()
+    .min(1, { message: 'ポジションを選択してください' }),
+
   neuroticism_score: z.number()
     .min(0, { message: errorMessages.numberRange('神経症傾向スコア', 0, 100) })
     .max(100, { message: errorMessages.numberRange('神経症傾向スコア', 0, 100) }),
