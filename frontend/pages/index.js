@@ -8,9 +8,9 @@ export default function Home() {
       <nav>
         <ul>
           <li>
-            <Link href="/register">
-              <a>新規従業員登録</a>
-            </Link>
+          <Link href="/register">
+            新規従業員登録
+          </Link>
           </li>
         </ul>
       </nav>

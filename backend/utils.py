@@ -130,12 +130,10 @@ def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[floa
 
 async def process_career_files(resume: UploadFile) -> Tuple[str, list[float]]:
     resume_info = await process_resume_file(resume) if resume else {}
-    
-    career_info_detail += f"職務経歴書情報: {resume_info.get('analysis', '')}"
-    
+        
     career_info_vector = resume_info.get('vector', [])
     
-    return career_info_detail, career_info_vector
+    return career_info_vector
 
 async def process_personality_file(bigfive: UploadFile) -> Tuple[str, list[float]]:
     if not bigfive:
@@ -182,25 +180,22 @@ def save_employee_data(db: Session, employee: EmployeeCreate, career_info_detail
         db.add(new_employee)
         db.flush()
 
-        # Create EmployeeGrade entry
         employee_grade = EmployeeGrade(
             employee_id=new_employee_id,
             grade_id=employee.grade_id
         )
         db.add(employee_grade)
 
-        # Create DepartmentMember entry
         department_member = DepartmentMember(
             employee_id=new_employee_id,
             department_id=employee.department_id
         )
         db.add(department_member)
 
-        # Create EmployeeJobAssignment entry
         job_assignment = EmployeeJobAssignment(
             employee_id=new_employee_id,
-            jobpost_id=employee.job_post_id,
-            start_date=employee.hire_date  # Set start_date as hire_date
+            jobpost_id=employee.jobpost_id,
+            start_date=employee.hire_date
         )
         db.add(job_assignment)
 

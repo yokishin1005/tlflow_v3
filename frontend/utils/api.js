@@ -39,8 +39,10 @@ export async function registerEmployee(employeeData) {
       formData.append(key, employeeData[key]);
     } else if (key === 'birthdate' || key === 'hire_date') {
       formData.append(key, employeeData[key].toISOString().split('T')[0]);
+    } else if (typeof employeeData[key] === 'number') {
+      formData.append(key, employeeData[key].toString());
     } else {
-      formData.append(key, JSON.stringify(employeeData[key]));
+      formData.append(key, employeeData[key]);
     }
   });
 

@@ -8,7 +8,6 @@ const Layout = ({ children, title = 'Employee Management System' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // UseEffect to handle dark mode toggle to ensure it runs after component mounts
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -24,26 +23,21 @@ const Layout = ({ children, title = 'Employee Management System' }) => {
     <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       <Head>
         <title>{title}</title>
-        {/* Verify that favicon.ico exists in the public directory */}
         <link rel="icon" href="/favicon.ico" />
-        {/* Ensure Google Fonts are loaded correctly */}
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
       <header className="bg-white dark:bg-gray-800 shadow-lg transition-colors duration-300">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/">
-              <a className="flex-shrink-0 flex items-center">
-                <motion.span
-                  className="text-2xl font-bold text-primary-600 dark:text-primary-400"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  EMS
-                </motion.span>
-              </a>
+            <Link href="/" className="flex-shrink-0 flex items-center">
+              <motion.span
+                className="text-2xl font-bold text-primary-600 dark:text-primary-400"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                EMS
+              </motion.span>
             </Link>
             <div className="hidden md:flex md:items-center md:space-x-8">
               <NavLink href="/" text="Home" />
@@ -106,18 +100,14 @@ const Layout = ({ children, title = 'Employee Management System' }) => {
 };
 
 const NavLink = ({ href, text }) => (
-  <Link href={href}>
-    <a className="text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-      {text}
-    </a>
+  <Link href={href} className="text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+    {text}
   </Link>
 );
 
 const MobileNavLink = ({ href, text }) => (
-  <Link href={href}>
-    <a className="text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200">
-      {text}
-    </a>
+  <Link href={href} className="text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200">
+    {text}
   </Link>
 );
 

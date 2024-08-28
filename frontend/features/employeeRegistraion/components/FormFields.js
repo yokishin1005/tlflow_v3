@@ -137,7 +137,7 @@ const FormFields = ({
         />
 
         <Controller
-          name="grade_name"
+          name="grade_id"
           control={control}
           render={({ field }) => (
             <SelectField
@@ -175,7 +175,7 @@ const FormFields = ({
         />
 
         <Controller
-          name="job_title"
+          name="jobpost_id"
           control={control}
           render={({ field }) => (
             <SelectField
@@ -184,11 +184,11 @@ const FormFields = ({
               options={[
                 { value: "", label: "選択してください" },
                 ...jobPosts.map((jobPost) => ({
-                  value: jobPost.job_title,  // Ensure job_title is selected
+                  value: jobPost.jobpost_id,
                   label: jobPost.job_title,
                 }))
               ]}
-              error={errors.job_title?.message}
+              error={errors.jobpost_id?.message}
               disabled={!selectedDepartmentId}
             />
           )}

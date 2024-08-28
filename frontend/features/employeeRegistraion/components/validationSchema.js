@@ -38,14 +38,11 @@ export const employeeSchema = z.object({
     errorMap: () => ({ message: '採用区分を選択してください' }),
   }),
 
-  grade_name: z.string()
-    .min(1, { message: 'グレードを選択してください' }),
+  grade_id: z.number().positive({ message: 'グレードを選択してください' }),
 
-  department_name: z.string()
-    .min(1, { message: '部署を選択してください' }),
-
-    job_title: z.string()
-    .min(1, { message: 'ポジションを選択してください' }),
+  department_id: z.number().positive({ message: '部署を選択してください' }),
+  
+  jobpost_id: z.number().positive({ message: 'ポジションを選択してください' }),
 
   neuroticism_score: z.number()
     .min(0, { message: errorMessages.numberRange('神経症傾向スコア', 0, 100) })
