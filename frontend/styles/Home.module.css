@@ -1,0 +1,60 @@
+/* 全体のコンテナ */
+.headerContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* タイトルのスタイル */
+.title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  color: #f39c12;
+  margin-bottom: 20px;
+  font-size: 32px;
+  text-align: center;
+}
+
+/* ナビゲーションメニューのスタイル */
+.nav {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.navList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 20px;
+}
+
+.navItem {
+  margin: 0;
+}
+
+.navLink {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: #0070f3;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  background-color: #e9ecef;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.navLink:hover {
+  background-color: #d6dbdf;
+  color: #0056b3;
+}
